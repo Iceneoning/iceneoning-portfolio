@@ -1,0 +1,28 @@
+---
+interface Props {
+  label: string;
+  steps: { title: string; detail: string }[];
+}
+const { label, steps } = Astro.props;
+---
+<figure class="engineering-flow" aria-label={label}>
+  <figcaption>{label}</figcaption>
+  <ol>
+    {steps.map((step, index) => <li><span class="engineering-flow__number">{String(index + 1).padStart(2, '0')}</span><strong>{step.title}</strong><span class="engineering-flow__detail">{step.detail}</span></li>)}
+  </ol>
+</figure>
+<style>
+  .engineering-flow { margin: 28px 0; padding: 22px; border: 1px solid var(--line); background: #edf3f7; }
+  .engineering-flow figcaption { margin-bottom: 18px; font-size: 12px; letter-spacing: .08em; color: var(--ink); font-weight: 600; }
+  .engineering-flow ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 18px; padding: 0; margin: 0; list-style: none; }
+  .engineering-flow li { position: relative; min-width: 0; padding-left: 12px; border-left: 2px solid #a3c4d3; }
+  .engineering-flow li + li::before { content: '→'; position: absolute; left: -16px; top: 29px; color: #7b9cae; }
+  .engineering-flow__number { display: block; font-size: 11px; color: #7092a5; font-variant-numeric: tabular-nums; }
+  .engineering-flow strong { display: block; margin: 5px 0 8px; font-size: 14px; line-height: 1.6; color: var(--ink); }
+  .engineering-flow__detail { display: block; color: #5c7583; font-size: 12px; line-height: 1.8; }
+  @media (max-width: 600px) {
+    .engineering-flow { padding: 18px; }
+    .engineering-flow ol { grid-template-columns: 1fr; gap: 24px; }
+    .engineering-flow li + li::before { content: '↓'; left: 11px; top: -25px; }
+  }
+</style>

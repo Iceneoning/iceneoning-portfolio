@@ -1,0 +1,149 @@
+---
+title: Challenge
+titleLines: [Challenge, RPG 关卡挑战]
+posterCode: RPG.
+posterTitle: Challenge
+cardCaption: Timeline 机关、Transform 检查点与 Pawn 重生
+keywords: [BLUEPRINT, CHECKPOINT, LEVEL DESIGN]
+tone: ice
+subtitle: 从角色操作、可复用机关到检查点重生，串起第三人称闯关循环。
+order: 1
+engine: Unreal Engine 5.7
+genre: RPG / Level Challenge Prototype
+role: 蓝图玩法逻辑、角色控制与关卡机关组织
+status: 原型阶段
+summary: 使用 Unreal Engine 蓝图搭建第三人称闯关循环：以相机 Yaw 驱动移动，使用 Timeline 和相对变换组织升降、摆动与滚动机关，将检查点 Transform 保存在 GameMode，并通过布娃娃、延迟销毁、生成与 Possess 完成角色重生。
+personalScope:
+  - 角色与输入蓝图逻辑
+  - 关卡挑战与交互机关蓝图
+  - 布娃娃死亡、检查点重生与终点庆祝流程
+integratedSystems:
+  - Unreal Engine Enhanced Input 和动画系统
+  - 网上获取的环境美术资源，用于地形、植被与场景搭建；个人负责玩法蓝图与关卡组织
+tags: [Unreal Engine, Blueprint, Enhanced Input, Animation, Level Design]
+evidenceLevel: captured
+mediaApproved: true
+cover: /media/projects/challenge/cover.webp
+coverAlt: Challenge 闯关场景中的旋转平台、桥梁与吊球机关
+coverCaption: 第三人称闯关 Demo · 关卡全景
+demoHighlights: [移动与跳跃, 参数化机关, 死亡与检查点重生, 终点庆祝]
+gallery:
+  - src: /media/projects/challenge/swing.webp
+    alt: 桥面上来回摆动的巨大吊球机关
+    caption: 吊球与桥梁组合，让玩家在通过路线前观察摆动节奏。
+  - src: /media/projects/challenge/log.webp
+    alt: 横跨峡谷的滚木机关与高低差路线
+    caption: 滚木与尖刺组合形成运动障碍，运动逻辑封装在独立机关 Actor 中。
+  - src: /media/projects/challenge/route.webp
+    alt: 峡谷之间由旋转平台和滚木连接的关卡路线
+    caption: 用平台间距、桥梁和地形高低差组织闯关路线。
+  - src: /media/projects/challenge/finish.webp
+    alt: 抵达终点后触发的烟花与彩带
+    caption: 终点庆祝为移动、机关和重生循环提供明确的完成反馈。
+draft: false
+---
+
+import EngineeringFlow from '../../components/EngineeringFlow.astro';
+
+## 项目定位与模块拆分
+
+Challenge 是我的早期 UE 第三人称闯关实践。参考教程搭建基础机制后，围绕**角色控制、机关运动、死亡重试与关卡反馈**组织完整循环。实现重点是把一次失败拆成可追踪的生命周期，让机关只表达自身行为，让 GameMode 保留跨角色重生的数据。
+
+| 模块 | 核心蓝图 | 持有的数据与职责 |
+| --- | --- | --- |
+| 玩家 Pawn | `BP_challengecharactor` | 输入转换、移动、跳跃、坠落检测与 `Dead()` |
+| 动画表现 | `ABp_ChallengeCharactor` | 水平速度 `Speed`、垂直速度 `ZSpeed`、空中状态 `IsFall` |
+| 游戏流程 | `BP_challengeMode` | 保存 `RebirthLocation`，通过 `Birth()` 生成并控制新 Pawn |
+| 空间触发 | `BP_Rebirth` / `BP_win` | 更新检查点、改变激活颜色、启动终点 Niagara |
+| 运动机关 | `BP_002` / `BP_003` / `BP_004` / `BP_Sphere` | 组件相对变换、Timeline 曲线、碰撞后的死亡或冲量 |
+
+这种拆分让关卡中的机关 Actor 可以独立放置和组合。角色不用知道自己撞到的是吊球还是尖刺；危险机关识别玩家后调用同一个 `Dead()` 入口。
+
+## 从输入到移动与动画
+
+### 在水平面上解释相机方向
+
+`BeginPlay` 通过 PlayerController 取得 `EnhancedInputLocalPlayerSubsystem`，注册 `IMC_Chanllge2`。`IA_Move2`、`IA_Look2`、`IA_Jump2` 分别承接移动、视角和跳跃。
+
+移动输入转换为 Axis2D 后，角色读取 Camera 的旋转，**只保留 Yaw，把 Pitch 和 Roll 归零**，再由这个旋转计算 Forward / Right Vector。工程中输入的 X 分量传给前向 `AddMovementInput`，Y 分量传给侧向 `AddMovementInput`。
+
+```text
+水平朝向 = MakeRotator(Roll=0, Pitch=0, Yaw=Camera.Yaw)
+前后移动 = ForwardVector(水平朝向) × Input.X
+左右移动 = RightVector(水平朝向) × Input.Y
+```
+
+这样抬头、低头只影响观察方向，不会把移动方向带离水平面。视角输入的 X / Y 分别进入 `AddControllerYawInput` 和 `AddControllerPitchInput`；跳跃直接调用 Character 的 `Jump()`，移动与跳跃仍交给 CharacterMovement 处理。
+
+### 动画读取运动结果
+
+`ABp_ChallengeCharactor` 在动画更新中通过 `TryGetPawnOwner` 取得角色，再读取 CharacterMovement。`Speed` 使用 `(Velocity.X, Velocity.Y, 0)` 的长度，`ZSpeed` 保存垂直速度，`IsFall` 来自 `IsFalling()`。
+
+水平速度排除了跳跃产生的 Z 分量，避免原地起跳被误判成高速移动。空中阶段则用 `IsFall` 与 `ZSpeed > 0` 区分上升趋势，并结合动画剩余时间判断动作衔接。输入负责操作意图，动画消费角色实际运动的结果。
+
+## 机关运动：相对变换与实例配置
+
+### 双组件升降：先保存基准，再计算偏移
+
+`BP_002` 在 BeginPlay 记录两个木制组件的初始 RelativeLocation。Timeline 更新时保留各自的 X / Y，只重算 Z：
+
+```text
+Z1 = InitialZ1 + t
+Z2 = InitialZ2 + abs(t - 150)
+```
+
+两组组件由同一条曲线驱动，使用不同的偏移表达交替升降。每次计算都基于初始位置，而非在上一帧的位置上反复累加，因此曲线循环时不会产生位置漂移。使用相对坐标，也让整个机关移动到关卡其他位置后仍沿自己的局部空间运动。
+
+### 摆动与滚动：运动曲线留在机关内部
+
+`BP_Sphere` 把 Timeline 浮点轨道写入球体父组件的 Pitch，通过 `SetRelativeRotation` 带动吊球摆动。Timeline 完成后调用 `loop()`，再 `PlayFromStart()`；球体碰撞组件负责识别玩家并触发死亡。
+
+`BP_004` 使用两个轨道组合尖刺滚动运动：`roll × 360` 生成旋转角度，`Move1 × 440` 生成局部 X 位移。更新 Transform 时保留原有 Y / Z 与 Scale，把位移和旋转合并后一次写回。运动路径与碰撞处理都封装在该 Actor 中，关卡只负责摆放和组合。
+
+### 同一旋转机关的危险与弹射模式
+
+`BP_003` 的 `Death` 是可编辑布尔值。玩家进入 Capsule 时，危险模式调用 `Dead()`；另一分支取得 Arrow 的 Forward Vector，乘以 `20000` 后传给 CharacterMovement 的 `AddImpulse`。Arrow 同时提供编辑器中可见的方向配置。
+
+Construction Script 根据 `Death` 设置尖刺组件的可见性，使场景中的危险表现与触发分支一致。`BP_launch` 则是独立的向上弹射器，暴露 `Launch Velocity Z`，默认值为 `2400`，调用 `LaunchCharacter` 时不启用 XY / Z Override，将发射速度叠加到现有运动上。
+
+这里的复用落在明确的配置点：**危险模式、Arrow 方向、弹射高度，以及 Actor 的位置和朝向**。Timeline 曲线与内部运动常量由各机关蓝图管理。
+
+## 死亡、检查点与重生
+
+### 检查点数据为什么放在 GameMode
+
+`BP_Rebirth` 的 Box BeginOverlap 先把 OtherActor 转换为玩家角色，过滤其他碰撞对象；随后取得 `BP_challengeMode`，将检查点 Actor 的位置和旋转写入 `RebirthLocation`。
+
+写入时重新构造 Transform，Scale 固定为 `(1, 1, 1)`。检查点可以为了场景表现缩放，但这个缩放不应传给新角色。触发后，两个 Cube 组件通过 `SetColorParameterValueOnMaterials("Color", …)` 改为暖黄色，给出已激活的空间反馈。
+
+**重生位置属于本次关卡进度，死亡 Pawn 只持有自身状态。** 把 Transform 放在 GameMode，旧角色销毁后数据仍然存在，新的 Pawn 可以从最近检查点继续挑战。
+
+<EngineeringFlow label="死亡到恢复操作的调用链" steps={[
+  { title: '统一死亡入口', detail: '机关碰撞或坠落检测调用 Dead()' },
+  { title: '布娃娃表现', detail: 'Mesh 开启物理，停止 CharacterMovement' },
+  { title: '销毁旧 Pawn', detail: '等待 2 秒，再调用 GameMode.Birth()' },
+  { title: '生成并接管', detail: '读取 Transform，Spawn 后由 Controller.Possess' },
+]} />
+
+### 从物理表现切换回受控角色
+
+`Dead()` 先启用 Mesh 的物理模拟，将 CharacterMovement 切换到 None，并关闭 SpringArm 的碰撞检测，避免布娃娃期间弹簧臂被场景碰撞反复挤压。延迟 `2 秒` 后销毁旧 Actor，并进入 GameMode 的 `Birth()`。
+
+`Birth()` 拆出 `RebirthLocation` 的位置与旋转，以单位 Scale 构造出生 Transform，通过 `BeginDeferredActorSpawnFromClass` / `FinishSpawningActor` 创建新 `BP_challengecharactor`，最后让 PlayerController 调用 `Possess`。
+
+重生采用新 Pawn，因此物理模拟、动画状态和移动组件随新实例重新初始化，避免逐项把布娃娃角色恢复为正常 Character。新 Pawn 的 BeginPlay 也重新接入输入映射。角色 Tick 另有场景坠落判定：Actor 的 Z 小于等于 `452` 时进入同一死亡入口。
+
+## 终点反馈与关卡组织
+
+`BP_win` 保存关卡中 Niagara Actor 的实例数组。玩家通过终点 Box 后，逐个访问 NiagaraComponent 并 `Activate(true)`，把烟花和彩带组合成完成反馈。特效对象由关卡实例指定，终点蓝图管理触发流程。
+
+主地图为 `/Game/ChallengeGame/Maps/Level_Scene_01`。我使用网上获取的环境美术资源组织地形、桥梁和植被，将升降、旋转、吊球和滚动障碍连接成路线。检查点放在连续挑战之间，控制失误后的回退距离；玩家可见的运动轨迹帮助其先观察节奏，再决定跳跃时机。
+
+## 实现取舍
+
+项目选择 Blueprint 和独立机关 Actor，方便在编辑器中直接组合与调整。检查点保存在 GameMode、通过 PlayerController 0 接管新 Pawn，符合本项目的单人关卡流程；它不承担存档或多人共享进度的职责。
+
+运动实现也体现了原型阶段的取舍：Timeline 机关用曲线直接驱动相对变换；`BP_003` 的旋转则每 Tick 增加 `5°`，当前角速度受帧率影响。若统一运动时间尺度，旋转增量应使用 `AngularSpeed × DeltaSeconds`。固定 Z 的坠落线同样与当前地图绑定，扩展到不同高度的关卡时，独立 Kill Volume 更便于配置。
+
+这次实践让我把“触发后播一个效果”进一步拆成**状态归属、空间变换与 Actor 生命周期**三个问题：谁保存进度、如何避免关卡对象的缩放污染角色、以及何时让控制器接管新实例。
+

@@ -1,6 +1,7 @@
 node_modules/
 .astro/
 dist/
+media-source/
 .DS_Store
 *.log
 .env

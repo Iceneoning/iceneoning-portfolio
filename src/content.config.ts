@@ -27,6 +27,14 @@ const projects = defineCollection({
     draft: z.boolean().default(false),
     cover: z.string().optional(),
     coverAlt: z.string().optional(),
+    coverCaption: z.string().optional(),
+    evidenceNote: z.string().optional(),
+    demoHighlights: z.array(z.string().min(1)).default([]),
+    gallery: z.array(z.object({
+      src: z.string().min(1),
+      alt: z.string().min(1),
+      caption: z.string().min(1),
+    })).default([]),
     sourceUrl: z.url().optional(),
   }).refine((data) => !data.mediaApproved || Boolean(data.cover && data.coverAlt), {
     message: '已核准的媒体必须同时提供 cover 和 coverAlt。',

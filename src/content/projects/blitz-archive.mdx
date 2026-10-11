@@ -1,45 +1,230 @@
 ---
-title: Blitz Archive
-titleLines: [Blitz, Archive.]
+title: Blitz Archive / BoardLine 57
+titleLines: [Blitz Archive, BoardLine 57]
 posterCode: BA.
-posterTitle: Blitz Archive
-cardCaption: Lyra 规则与能力扩展
-keywords: [LYRA, GAS, GAMEPLAY RULES]
+posterTitle: BoardLine 57
+cardCaption: 英雄切换事务、敌情授权与两轮推车规则
+keywords: [C++, GAS, FASTARRAY, GAMEFEATURE]
 tone: warm
-subtitle: 基于 Lyra 的玩法规则与 GAS 能力扩展。
-order: 2
+subtitle: 基于 Lyra 构建英雄运行时、技能归属、语义地图与服务器权威的推车玩法。
+order: 4
 engine: Unreal Engine 5.7 / Lyra
-genre: Gameplay Experiment
-role: 玩法规则与能力扩展（具体范围待源码核实）
+genre: Multiplayer Hero TPS Prototype
+role: 玩法与网络模块的 C++ 扩展、系统集成
 status: 开发中
-summary: 基于 Unreal Engine Lyra 的玩法与能力扩展项目。围绕 GAS、GameplayTag、DataAsset 与玩法规则展开实践，并明确框架复用与个人修改的边界。
+summary: 基于 Lyra 的多人英雄 TPS 原型。以 Revision 与事务号管理英雄切换，按精确实例回收装备与技能资源；接入 Shiroko 无人机、Hoshino 护盾账本、Recast 语义地图和观察者专属敌情复制，并实现推车检查点、回退、加时、两轮换边与结算流程。
 personalScope:
-  - 玩法规则扩展（具体实现待核实）
-  - 能力系统整合（具体实现待核实）
+  - Hero 选择事务、固定 Loadout、运行时资源清理与角色表现接入
+  - 通用大招充能、Shiroko 无人机与 Hoshino 护盾技能扩展
+  - 语义地图 Bake、Marker Provider、Enemy Awareness 与战术标记
+  - CombatantRoster 控制转移，以及 TBPayload 规则、复制与回合流程
 integratedSystems:
-  - Lyra 既有工程框架
-  - GAS 现有能力框架
-tags: [C++, Lyra, GAS]
+  - Epic Games Lyra/ShooterCore 的 GAS、角色、武器、队伍与复制框架
+  - Experience、GameFeature、GameplayMessage、DataAsset 与 Recast NavMesh
+  - 复用现有角色、武器与场景资源；个人工作聚焦玩法逻辑、网络状态和系统集成
+tags: [C++, Unreal Engine, Lyra, GAS, GameFeature, FastArray, Replication, Recast]
 evidenceLevel: described
-mediaApproved: false
+mediaApproved: true
+cover: /media/projects/blitz-archive/cover.webp
+coverAlt: BoardLine 项目主视觉，学院城市中的角色与护送载具
+coverCaption: BoardLine 57 · 项目主视觉
+demoHighlights: [Shiroko 角色与武器表现, 持枪移动与射击, 命中与死亡反馈, 编辑器内玩法演示]
+draft: false
 ---
 
-## 玩法目标
+import EngineeringFlow from '../../components/EngineeringFlow.astro';
 
-以 Lyra 为工程基础扩展玩法规则与能力行为。具体规则、技能表现与可操作玩法目标将在真实 UE 演示和工程资料齐备后说明。
+## 项目定位与模块职责
 
-## 个人职责
+BoardLine 是开发中的多人英雄 TPS 原型。我在 Lyra 基础上扩展英雄身份、技能生命周期、战术信息与推车规则，重点处理**异步操作过期、资源归属、服务器裁决和客户端显示之间的边界**。当前已接入 Shiroko 与 Hoshino 两套英雄配置，以及包含检查点、回退、加时和两轮攻守的推车原型。
 
-个人工作围绕玩法规则扩展与能力系统整合，具体修改范围仍待源码核实。**Lyra 与 GAS 是复用的既有框架**，框架已有的武器、输入及复制机制不能作为个人从零开发的成果。
+工程复用 Lyra 的 Experience、GAS、角色和武器底座，通过 GameFeature、DataAsset、GameplayTag 和 GameplayMessage 接入玩法。个人负责下表中的扩展与集成，不将 Lyra 原有射击、换弹、移动预测和 ReplicationGraph 当作自研。
 
-## 系统设计
+| 系统 | 核心实现 | 负责的问题 |
+| --- | --- | --- |
+| Hero Runtime | `BAHeroSelectionComponent` / `BAHeroRuntimeContext` | 权威身份、异步切换事务、能力与派生 Actor 的归属 |
+| 固定装备与表现 | `BAHeroLoadoutComponent` / `BAHeroPresentationComponent` | 装备预检、失败恢复、角色外观和武器附着 |
+| 技能 | `LyraUltimateChargeComponent` / Drone / Shield Ledger | 充能、目标决策、释放扣费与可撤销护盾 |
+| 战术信息 | Minimap / Enemy Awareness / Tactical Ping | 地图拓扑、标记生命周期与观察者授权 |
+| 战斗身份 | CombatantRoster GameFeature | 将稳定战斗身份与当前 Controller、Pawn 分离 |
+| 推车 | TBPayload GameFeature | 纯规则计算、样条显示、两轮比赛状态机 |
 
-本案例将结合真实工程材料说明 GameplayTag、DataAsset、Ability 与玩法事件如何协同，并逐项区分沿用 Lyra 的机制与个人修改。
+## 英雄切换：异步预检与提交事务
 
-目前不提供未经工程核对的调用图、类名或效果结论。后续需要补充扩展入口、数据配置、能力触发条件与规则取舍的代码证据。
+### 用身份版本区分当前英雄和正在进行的操作
 
-## 真实验证与待验证
+`FBAActiveHeroState` 用 `HeroId + Revision` 表示已提交身份；Pending 状态单独保存切换目标。每次操作再携带 `TransactionId`，用于区分同一玩家的不同切换请求。UI 读取这些状态的投影，不直接修改运行时身份。
 
-项目截图、能力演示、网络与性能测试记录尚待整理。当前不声明相关测试已通过。
+资源加载还有独立的 `ResolveSerial`。`HandleHeroAssetLoaded()` 首先比较回调 Serial 与当前 Serial，不匹配就返回；匹配后再核对 Roster、Primary Asset ID、AbilitySet、Loadout 和 Presentation 配置。这样，即使较早发出的加载最后才完成，也不会覆盖玩家的新选择。
 
-每项验证需补充对应工程版本、环境、复现步骤、结果和来源。设计说明与可复现验证将分开呈现，不使用虚构的数字或画面填充证据。
+<EngineeringFlow label="Hero 切换的事务边界" steps={[
+  { title: 'Preflight', detail: '校验允许的 Hero、资源与表现配置，准备新运行时上下文。' },
+  { title: 'Destructive Commit', detail: '设置 HeroChanging，清理旧英雄授权与固定装备。' },
+  { title: 'Apply & Commit', detail: '授予新能力、应用 Loadout 和表现，再提交 Active 身份。' },
+  { title: 'Failure Recovery', detail: '失败时利用缓存的旧定义与上下文进入恢复流程。' },
+]} />
+
+### 在异步边界重新核对操作归属
+
+旧英雄清理之后，流程再次核对 Authority、切换状态、Pending Hero、Revision 和 TransactionId，并重新获取当前 Pawn / Controller。玩家可能在等待期间死亡、重生或改变控制关系，不能把开始操作时缓存的 Pawn 当作永远有效。
+
+进入破坏性提交前保留旧英雄定义、运行时上下文和能力授予记录；后续失败由恢复流程处理。代码还设置了授予前、授予后、Loadout 后和表现提交前的故障注入点，用来定位事务在哪个阶段失去一致性。
+
+## 装备与技能资源：按精确归属清理
+
+### Loadout 的预检、应用与回滚
+
+固定装备不直接把整个 Inventory 清空。`Preflight()` 先检查服务器权限、Inventory / QuickBar / EquipmentManager，解析语义 `SlotTag` 到栏位索引，拒绝重复栏位、不可添加物品及其他来源占用的栏位，并限制自动装备项数量。
+
+应用过程为每个创建的物品记录 `LoadoutGrantId、SlotTag、QuickBarIndex、ItemInstance`。中途失败时，按逆序回收本次创建的物品；移除 QuickBar 项之前，必须确认栏位里仍然是记录中的**同一个 ItemInstance**。即使其他系统已经替换该栏位，也不会误删新物品。
+
+这里有两层恢复职责：Loadout 回滚本次临时授予；Hero Selection 在旧装备已清除的切换失败中恢复旧英雄。两者各自处理自己的状态，避免组件间依赖隐式的“清空再重建”。
+
+### RuntimeContext 统一管理英雄派生资源
+
+每一代英雄运行时上下文保存 Hero ID、Revision 和事务号，作为能力的 SourceObject，并记录自己创建的 Actor 与 Loose GameplayTag 的授予数量。无人机与导弹注册到对应上下文，切换英雄时可按归属收回。
+
+清理 Actor 时先把记录 `MoveTemp` 到局部数组，再逐个 `Destroy()`。原因是 `Destroy()` 可能同步触发 `EndPlay()`，而 EndPlay 又会注销自身；先移走数组可避免遍历过程中修改同一容器。Loose Tag 也按该上下文实际授予的数量移除，不清掉其他技能的同名 Tag。
+
+## 角色表现：武器跟随正确的骨骼源
+
+Hero Presentation 用软引用配置角色部件、相机模式和可选第一人称手臂，将外观选择与 Hero 身份、Inventory 和 Equipment 分开。英雄切换不需要为每个角色复制一套武器逻辑。
+
+`LyraWeaponAttachmentComponent` 为装备提供统一附着目标，按以下顺序解析：
+
+1. 带 `WeaponAttachmentSource` 标记、且拥有目标 Socket 的角色部件 Mesh。
+2. Character 主 Mesh 上有效的 Socket。
+3. Pawn 根组件作为回退目标。
+
+装备订阅角色部件变化事件，收到通知后重新解析目标并附着；相对变换组合装备的 `AttachTransform` 与角色的 `CharacterGripTransform`。枪械自身的安装信息和不同角色的握持补偿因此有独立配置位置。
+
+一个关键细节是**隐藏骨骼也可能仍然承担 Socket 位置计算**。仅更新动画姿态不一定刷新组件空间骨骼，远端角色的枪就可能跟随过期 Socket。附着 Provider 对使用中的骨骼源设置 `AlwaysTickPoseAndRefreshBones`，并关闭更新频率优化，保证隐藏 Mesh 的附着坐标持续有效。Provider 本身通过事件响应角色部件变化，不需要每帧重新扫描部件。
+
+## GAS：充能提交与护盾账本
+
+### 充能从服务器伤害消息进入
+
+`LyraUltimateChargeComponent` 支持被动充能与伤害充能。伤害消息先核对 Instigator 对应的 PlayerState 是否为组件所属玩家，再合并来源标签与上下文标签，按第一条匹配的 TagQuery 选择来源倍率：
+
+```text
+伤害充能增量 = DamageMagnitude × DamageChargeMultiplier × SourceMultiplier
+被动充能增量 = PassiveChargePerSecond × 0.25s
+```
+
+进度达到阈值时转成可用次数；达到储存上限后不继续积累额外进度，并更新 Ready GameplayEffect。技能移除通知延后一 Tick 重新查询，因为移除回调发生时，该 Ability Spec 仍可能出现在 ASC 的能力列表中。
+
+大招基类使用 `ServerOnly` 执行策略，通过释放成功通知与一次性扣费标记防止重复消费。Shiroko 的具体释放路径先探测生成位置、创建并初始化无人机，再提交充能消费；生成失败时不消耗次数，消费提交失败则销毁刚创建的无人机。
+
+### Hoshino：撤销剩余贡献，而非减去最初授予值
+
+Hoshino 已接入临时护盾、Dash、护盾大招和防御被动配置。护盾大招通过 `LyraShieldLedgerComponent` 保存 `ContributionHandle、SourceObject、RemainingAmount`。`LyraHealthSet` 处理伤害时先消耗账本记录，按贡献顺序扣减剩余值，再处理兼容的未登记护盾，最后扣生命值。
+
+如果技能 A 提供 100 护盾、技能 B 提供 80，随后受到 60 伤害，账本剩余为 A 的 40 和 B 的 80。A 到期只撤销自身剩余的 40，保留 B 的 80。直接在到期时扣掉 A 最初的 100，会错误扣除其他来源的护盾。
+
+大招的结束与到期都通过精确 Handle 回收剩余贡献；来源对象同时支持按英雄运行时上下文归属清理。这使护盾的伤害吸收、技能取消和英雄切换使用同一套账本语义。
+
+## Shiroko 无人机：目标评分与发射解
+
+### 限制扫描开销，并抑制频繁换目标
+
+无人机的权威目标选择在服务器执行。目标扫描使用 Timer，间隔按配置限制在 0.01–0.1 秒，而不是每帧完整搜索。候选来自球形 Pawn 查询，再过滤存活状态、敌我关系、地面位置和瞄准约束；LOS 检查还受到候选数量上限控制。
+
+目标评分结合距离、当前可见性、当前目标保持奖励、最近受到 Shiroko 伤害的标记，以及瞄准、遮挡和发射解惩罚。当前源码中，可见目标奖励 250，保持当前目标奖励 120，近期 Shiroko 伤害奖励 500；这些权重体现优先攻击近期交战目标、同时保持当前目标的选择策略。
+
+仅有更高分还不足以换目标：还要满足最小切换间隔与分数领先阈值。短暂失去视线时使用近期可见位置记录，持续无法获得发射解则允许更积极地切换，减少两个相近目标之间的抖动。
+
+### 发射前决定直射或预计算弧线
+
+直射方案依据目标速度预测落点，加入散布、投影地面并检查路径；抛射方案检查距离、顶部空间、弧线通行和落点，生成包含起点、顶点、终点、飞行时间与伤害倍率的 `FireSolution`。
+
+导弹不使用 Homing。直射使用计算好的初速度；抛射沿预先确定的路径推进，每步 Sweep 检查碰撞，到达落点或碰撞后进入引信流程。爆炸逻辑使用已爆炸 / 已启动引信标记防止重复触发，伤害在服务器应用，反馈通过网络通知播放。
+
+无人机和导弹仍使用 Actor 复制及移动复制。预计算发射解用于稳定玩法决策，并不等于取消导弹的网络移动同步。
+
+## 语义地图：从 NavMesh 拓扑到统一标记
+
+### 在编辑器侧识别稳定区域与连接通道
+
+地图 Bake 从 Recast 的可行走表面构建图，区分稳定区域、过渡通道、不确定证据与不完整输入。过渡分类器不只看两端高度差，还计算路径长度、总垂直行程、单调性、反向比例与最长反向段，避免把起伏平台或折返路径直接认成楼梯连接。
+
+对于冲突或缺失证据，候选进入隔离状态，不参与稳定区域的连通扩散。连接器最终还需要确认两个唯一且不同的边界区域，拒绝连接回自身的结果，避免一个错误通道把不同楼层合并。
+
+<EngineeringFlow label="语义地图的数据流" steps={[
+  { title: 'Recast 表面图', detail: '读取导航表面、邻接关系与有向可通行信息。' },
+  { title: '区域与连接分类', detail: '确认稳定区域、过渡通道，隔离歧义与不完整输入。' },
+  { title: 'Bake 资产', detail: '输出语义数据、地图纹理与包含输入配置的版本 Hash。' },
+  { title: 'Runtime Read Model', detail: '统一坐标投影、导航锚点和面向本地玩家的标记快照。' },
+]} />
+
+### 标记有显式生命周期和观察者范围
+
+运行时通过 `WorldToMapUV` 使用固定世界边界完成投影。HUD 小地图和战术地图共用语义数据、标记注册表与敌情读取模型，显示尺寸和交互方式各自处理。
+
+Marker Provider 明确声明激活、停用、位置来源和 Descriptor。注册项区分 Provider Owner、Position Source 与获授权的 LocalPlayer；更新、注销只处理该 Provider 拥有的 Handle，生成快照时再过滤观察者范围。
+
+Self / Friendly / Hostile 是关系分类，**不是可见性授权**。知道某个对象属于敌方，不能直接成为显示它实时位置的理由。
+
+## 敌情与 Ping：服务器授权后的状态复制
+
+`LyraEnemyAwarenessSubsystem` 在服务器接收 Grant，记录观察者 Controller、目标 PlayerState、来源 Tag、追踪策略、优先级和过期时间，并汇总成 Hidden / Revealed / LastKnown。Revealed 可按授权追踪实时位置；LastKnown 必须使用静态快照。
+
+结果由观察者专属 Replicator 通过 FastArray 下发。Replicator 设置 `bOnlyRelevantToOwner`，数组使用 `COND_OwnerOnly`；条目携带目标身份、状态、量化位置 `FVector_NetQuantize10`、朝向、过期时间和 Revision。FastArray 的增量回调更新本地读取模型。
+
+实时授权结束后，LastKnown 延续最后一次获授权的位置，不继续从目标 Pawn 读取新坐标；到期后转为 Hidden。这个边界管理的是战术显示可以消费的信息，并不替代 Lyra 原有的 Actor 网络相关性策略。
+
+Tactical Ping 同样不接受客户端直接指定的敌人或坐标。服务器从请求者的视点重新查找存活敌方候选，检查瞄准角与视线，再发布获授权的事件。请求先经过 Token Bucket 限流，并带有滥用暂时禁用策略，避免无效请求反复执行完整搜索。
+
+## 战斗身份：让控制者与参战者解耦
+
+CombatantRoster 使用稳定的 `FCombatantId` 记录参战者，另存 ControlType、ConnectionState、LifeState 与 PawnGeneration。Controller、PlayerState 和 Pawn 是当前绑定，不作为跨生命周期身份本身；真人控制、AI 替代、重连和新 Pawn 因而能围绕同一个战斗记录处理。
+
+控制转移组件在服务器响应 PostLogin、Experience 与离线策略，区分网络断线和主动离开，再决定是否启用 AI 替代。英雄持久状态只保存 HeroId / Revision，不带入尚未提交的切换事务或旧 RuntimeContext。
+
+跨 World 的参战记录保存在 GameInstance 层的 Travel Repository，包含队伍、控制状态、Pawn 代数、英雄身份与重连剩余时间。仓库要求同一场比赛的 Travel 授权，并限制快照有效期与目标 World 消费；当前存活 PlayerState 的辅助绑定使用弱引用，避免将旧 World 对象作为持久身份强行保留。
+
+## TBPayload：规则计算、网络显示与比赛流程
+
+### 用纯状态步进表达推车规则
+
+`FTBPayloadSimulation::Step()` 接收当前状态、攻守人数、DeltaTime 与 RuleSet，集中处理推进、争夺、空车回退和检查点。`TBPayloadObjectiveComponent` 在服务器按存活 Pawn 的中心点与目标半径统计人数，避免大模型或技能特效的 Bounds 改变占领判定。
+
+当前 ExpanseDepot 配置以 650 cm 为范围，基础速度 120 cm/s；两名攻击方为 1.3 倍，三名及以上为 1.5 倍。攻守同时在场时争夺并停止，只有防守方在场时停止；双方离开后经过 3 秒宽限，以 40 cm/s 回退，但不越过最近检查点的 `LockedDistance`。
+
+大 DeltaTime 跨过宽限边界时，只计算超过宽限的那部分回退时间。前进穿过检查点时先钳到下一个检查点，更新索引与锁定距离，并执行 2 秒停留；一次 Step 不跨过多个检查点，避免跳过检查点事件。`FurthestDistance` 独立记录最远成绩，车辆回退不会降低已经取得的回合成绩。
+
+### 复制状态，客户端沿固定样条显示
+
+`ATBPayloadActor` 关闭 Movement Replication，复制距离、速度、争夺状态、人数、服务器时间、检查点、锁定距离、最远距离和 `RoundSerial`。Actor 根部的路线样条保持不动，只有车体碰撞组件与子级视觉随样条位置移动，避免车与路线一起位移。
+
+客户端收到状态后按本地接收时间做有限外推，再插值显示：
+
+```text
+目标距离 = Distance + Speed × min(距收到状态的时间, 0.25s)
+目标距离范围 = [LockedDistance, 下一检查点或路线终点]
+显示距离 = FInterpTo(当前显示距离, 目标距离, DeltaTime, ClientInterpSpeed)
+```
+
+外推被限制在 0.25 秒及当前阶段边界内。首次收到状态或 `RoundSerial` 改变时直接重置显示距离，避免新回合从旧回合终点反向滑回起点。Round Serial 在同一运行过程中持续递增，新比赛也不会复用上一场的回合标识。
+
+### 两轮攻守与结算状态机
+
+`ATBPayloadMatchController` 在服务器组织 Waiting、Setup、Playing、Overtime、Intermission 与 Finished。它显式依赖 Payload Actor 的 Tick，先完成车辆状态步进，再判断检查点、比赛时钟和回合结束。
+
+<EngineeringFlow label="两轮推车比赛流程" steps={[
+  { title: '第一轮进攻', detail: '准备后开局，检查点增加时间，记录最远距离与完成耗时。' },
+  { title: '中场与换边', detail: '交换攻守角色、重置车辆代数，按阶段重生队伍。' },
+  { title: '第二轮比较', detail: '超过首轮未完成距离即可决胜；都完成时比较耗时。' },
+  { title: '结算与下一局', detail: '公布胜方或平局，结算倒计时后重置比赛并开下一局。' },
+]} />
+
+当前规则为每轮 240 秒、准备 15 秒、中场 12 秒、每个检查点奖励 90 秒。时间耗尽时若攻击方近期仍接触目标，进入加时；持续接触会重置加时离车宽限，离开超过宽限则结束回合。加时中抵达检查点并获得时间后，可恢复正常比赛时钟。
+
+两轮都完成路线时比较耗时，否则比较各轮最远距离，并对近似相等结果使用容差。回合重生先取消旧 Pawn 的能力，再 UnPossess、销毁与 Restart，保证能力结束流程仍可访问有效控制关系。
+
+## 回归设计与关键取舍
+
+Hero 切换保留故障注入与异步暂停控制，便于覆盖能力授予、装备创建和表现提交之间的失败路径。检查重点是：过期回调是否被拒绝、临时资源是否按归属回收、失败后旧英雄是否恢复，而不只是最终外观有没有改变。
+
+推车将规则步进抽离出 Actor，已有规则测试围绕争夺停止、宽限后回退、大帧跨检查点、锁定距离、最远成绩、加时接触重置和两轮胜负比较构造输入。地图与 PIE 测试则负责检查路线、碰撞、检查点事件、回合重置和联网状态的集成行为。
+
+这套实现优先建立清晰的权威状态与生命周期契约：客户端负责显示与请求，服务器负责身份、技能消费、敌情授权和比赛规则；可配置的资源与数值通过 DataAsset 组织；跨模块通过显式上下文、Handle 和消息交互。项目继续迭代英雄表现和多人玩法体验，当前技术案例聚焦这些已经写入工程的系统实现。

@@ -3,27 +3,33 @@ import type { MarkdownHeading } from 'astro';
 import BaseLayout from './BaseLayout.astro';
 import NextProject from '../components/NextProject.astro';
 import PortfolioArtwork from '../components/PortfolioArtwork.astro';
+import ProjectDemo from '../components/ProjectDemo.astro';
+import { getProjectMedia } from '../lib/project-media';
 import { projectNumber, type Project } from '../lib/projects';
 interface Props { project: Project; previousProject?: Project; nextProject?: Project; total: number; headings: MarkdownHeading[]; }
 const { project, previousProject, nextProject, total, headings } = Astro.props;
 const { data } = project;
 const number = projectNumber(project);
 const chapters = headings.filter((heading) => heading.depth === 2);
+const media = getProjectMedia(project);
 ---
 <BaseLayout title={`${data.title} · ICE Portfolio`} description={data.summary} edition={`CASE ${number} / ${String(total).padStart(2, '0')} · WINTER EMBLEM`}>
   <main id="main" tabindex="-1">
     <section class:list={['case-hero', {'case-hero--warm':data.tone === 'warm'}]} aria-labelledby="project-title"><div class="wrap">
       <div class="case-title-row"><div><p class="eyebrow">PROJECT {number} / CASE STUDY</p><h1 id="project-title">{data.titleLines[0]}<br /><em>{data.titleLines[1]}</em></h1><p class="tagline">{data.subtitle}</p></div><div class="case-intro"><p class="case-summary">{data.summary}</p></div></div>
-      <div class="case-concept"><PortfolioArtwork warm={data.tone === 'warm'} wide /><span>网站 AI 概念插画 · 非 UE 项目画面</span></div>
-      {data.mediaApproved && data.cover ? <figure class="case-capture"><img src={data.cover} alt={data.coverAlt} width="1280" height="720" /><figcaption>{data.title} · 真实项目截图</figcaption></figure> : <div class="case-media" role="note" aria-label="真实 UE 项目截图尚未提供"><div><span class="eyebrow">PROJECT MEDIA / PENDING</span><h2>项目实机画面待补</h2><p>真实 UE 截图与演示视频正在整理。以下先介绍个人职责、系统边界与当前验证状态。</p></div><span>UE SCREENSHOTS & VIDEO</span></div>}
-      <div class="case-facts"><div><small>ENGINE</small><strong>{data.engine}</strong></div><div><small>PERSONAL CONTRIBUTION</small><strong>{data.role}</strong></div><div><small>KEYWORDS</small><strong>{data.keywords.join(' / ')}</strong></div><div><small>STATUS</small><strong>{data.status} · 案例资料整理中</strong></div></div>
+      {data.status === '开发中' && <div class="case-development-note" role="note"><strong>正在开发，敬请期待</strong><span>项目仍在持续迭代，以下技术介绍为当前阶段的实现记录。</span></div>}
+      {media.cover ? <figure class="case-capture"><img src={media.cover} alt={media.coverAlt} width="1280" height="720" fetchpriority="high" /><figcaption>{media.coverCaption}</figcaption></figure> : media.awaitingCover ? <div class="project-cover-pending case-cover-pending"><span class="eyebrow">BOARDLINE 57 / IN DEVELOPMENT</span><strong>BoardLine 57</strong><span>项目封面待上传</span></div> : <>
+        <div class="case-concept"><PortfolioArtwork warm={data.tone === 'warm'} wide /><span>网站 AI 概念插画 · 非 UE 项目画面</span></div>
+      </>}
+      <div class="case-facts"><div><small>ENGINE</small><strong>{data.engine}</strong></div><div><small>PERSONAL CONTRIBUTION</small><strong>{data.role}</strong></div><div><small>KEYWORDS</small><strong>{data.keywords.join(' / ')}</strong></div><div><small>STATUS</small><strong>{data.status}</strong></div></div>
+      <ProjectDemo project={project} />
     </div></section>
     <section class="case-reading wrap" id="chapters" aria-label="项目技术案例">
-      <nav class="chapter-nav" aria-label="案例章节"><p class="eyebrow">CASE INDEX</p>{chapters.map((heading, index) => <a href={`#${heading.slug}`}>{String(index + 1).padStart(2, '0')} / {heading.text}</a>)}<a href="#ownership">职责清单</a><a href="#evidence">资料状态</a><a href="#project-navigation">项目导航</a></nav>
-      <article class="chapter-article"><p class="eyebrow">ENGINEERING NOTES</p><h2>让系统设计<br />有据可循。</h2><p class="lede">实际参与范围、使用的机制、工程约束和验证状态分开写明。详细代码、实机画面与可复现记录将随真实材料补齐。</p>
+      <nav class="chapter-nav" aria-label="案例章节"><p class="eyebrow">CASE INDEX</p><a href="#demo">视频演示</a>{chapters.map((heading, index) => <a href={`#${heading.slug}`}>{String(index + 1).padStart(2, '0')} / {heading.text}</a>)}{data.gallery.length > 0 && <a href="#gallery">项目画面</a>}<a href="#ownership">职责清单</a><a href="#project-navigation">项目导航</a></nav>
+      <article class="chapter-article">
         <div class="mdx-content"><slot /></div>
-        <section class="chapter" id="ownership"><small>PERSONAL CONTRIBUTION</small><h3>系统职责与集成边界</h3><p>个人负责范围：{data.personalScope.join('、')}。</p>{data.integratedSystems.length > 0 && <div class="scope"><strong>既有框架 / 集成边界</strong><ul>{data.integratedSystems.map((system) => <li>{system}</li>)}</ul></div>}</section>
-        <section class="chapter" id="evidence"><small>CONTENT REVIEW / {data.evidenceLevel.toUpperCase()}</small><h3>真实验证与待补资料</h3><div class="scope"><strong>资料状态</strong><p>{data.evidenceLevel === 'described' ? '当前仅提供项目与职责说明，尚未附可追溯工程证据。真实截图、代码引用、测试环境与记录待补，不代表功能已验证。' : '已有部分资料记录，具体通过范围以正文所附证据为准。'}</p></div>{data.sourceUrl && <p><a href={data.sourceUrl}>查看公开源码 ↗</a></p>}</section>
+        {data.gallery.length > 0 && <section class="chapter" id="gallery"><small>PROJECT CAPTURES</small><h3>项目画面与关卡细节</h3><div class="case-gallery">{data.gallery.map((item) => <figure><a href={item.src} aria-label={`查看原图：${item.alt}`}><img src={item.src} alt={item.alt} loading="lazy" width="1280" height="720" /></a><figcaption>{item.caption}</figcaption></figure>)}</div></section>}
+        <section class="chapter" id="ownership"><small>PERSONAL CONTRIBUTION</small><h3>系统职责与集成边界</h3><p>个人负责范围：{data.personalScope.join('、')}。</p>{data.integratedSystems.length > 0 && <div class="scope"><strong>引擎机制与素材使用</strong><ul>{data.integratedSystems.map((system) => <li>{system}</li>)}</ul></div>}{data.sourceUrl && <p><a href={data.sourceUrl}>查看公开源码 ↗</a></p>}</section>
       </article>
     </section>
     <section class="case-end" id="project-navigation">

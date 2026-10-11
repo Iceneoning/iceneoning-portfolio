@@ -1,5 +1,5 @@
 ---
-import { projectHref, projectNumber, type Project } from '../lib/projects';
+import { projectHref, type Project } from '../lib/projects';
 import { Image, getImage } from 'astro:assets';
 import workshop from '../assets/atelier/winter-workshop.png';
 interface Props { projects: Project[]; }
@@ -20,8 +20,8 @@ const heroPreview = await getImage({ src: workshop, width: 48, format: 'webp', q
   </div>
     <nav class="hero-projects wrap" aria-label="代表作品快捷入口">
       <div class="hero-projects-head"><span>代表作品</span></div>
-      {projects.map((project) => <a class="hero-project" href={projectHref(project)} aria-label={`进入 ${project.data.title} 案例`}>
-        <span class="hero-project-number">{projectNumber(project)}</span>
+      {projects.map((project, index) => <a class="hero-project" href={projectHref(project)} aria-label={`进入 ${project.data.title} 案例`}>
+        <span class="hero-project-number">{String(index + 1).padStart(2, '0')}</span>
         <div><span class="hero-project-genre">{project.data.genre}</span><strong>{project.data.title}</strong><p>{project.data.cardCaption}</p></div>
         <span class="hero-project-arrow" aria-hidden="true">↗</span>
       </a>)}

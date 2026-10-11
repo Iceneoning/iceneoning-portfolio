@@ -1,0 +1,19 @@
+---
+import type { Project } from '../lib/projects';
+import { getProjectMedia } from '../lib/project-media';
+interface Props { project: Project; }
+const { project } = Astro.props;
+const media = getProjectMedia(project);
+---
+<section class="case-demo" id="demo" aria-labelledby="demo-title">
+  <div class="demo-heading"><div><p class="eyebrow">GAMEPLAY / VIDEO</p><h2 id="demo-title">视频演示<span class="accent">。</span></h2></div><span class="demo-status">{media.sources.length ? '实机演示' : '即将上线'}</span></div>
+  {media.sources.length ? <video class="demo-player" controls playsinline preload="none" poster={media.cover} aria-label={`${project.data.title} 实机演示`}>
+    {media.sources.map((source) => <source src={source.src} type={source.type} />)}
+    <p>当前浏览器无法播放此视频。<a href={media.sources[0]?.src}>下载演示视频</a></p>
+  </video> : <div class="demo-placeholder" role="note" aria-label={`${project.data.title} 视频演示预留位置`}>
+    <span class="demo-placeholder-mark" aria-hidden="true">↗</span>
+    <p class="eyebrow">{project.data.posterCode} / GAMEPLAY PREVIEW</p>
+    <strong>把玩法留给画面。</strong><p>实机演示即将上线。</p>
+  </div>}
+  {project.data.demoHighlights.length > 0 && <ul class="demo-highlights" aria-label="演示重点">{project.data.demoHighlights.map((item) => <li>{item}</li>)}</ul>}
+</section>

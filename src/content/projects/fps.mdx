@@ -1,0 +1,188 @@
+---
+title: FPS Blueprint Shooter
+titleLines: [FPS, Blueprint Shooter]
+posterCode: FPS.
+posterTitle: Blueprint Shooter
+cardCaption: Timer 连射、AnimNotify 换弹与 StateTree 攻击
+keywords: [BLUEPRINT, WEAPON, ANIMATION, METASOUND]
+tone: warm
+subtitle: 逆向分析射击实例，重建武器流程并排查手臂与武器动画时序。
+order: 2
+engine: Unreal Engine 5.7
+genre: First-Person Shooter Prototype
+role: 蓝图武器逻辑、动画协作与射击反馈
+status: 原型阶段
+summary: 从可运行实例逆向分析并重建蓝图射击流程：拆分角色与武器状态，以 Timer 控制连射、AnimNotify 提交换弹、相机射线和 Physical Surface 分发命中反馈；梳理手臂与武器 AnimBP 的状态依赖，并接入 StateTree 僵尸追击、攻击和伤害循环。
+personalScope:
+  - FPS 角色与 Enhanced Input 交互
+  - 蓝图武器、射击和换弹逻辑的组织
+  - 手臂与武器 AnimBP 协作及动画时序问题排查
+  - 敌人蓝图与 StateTree 行为资产组织
+integratedSystems:
+  - Unreal Engine Enhanced Input、Animation Blueprint、StateTree 与 MetaSound
+  - 复用现有枪械、音效、贴花与角色素材；个人负责玩法逻辑和表现接入
+tags: [Unreal Engine, Blueprint, FPS, StateTree, Enhanced Input, MetaSound]
+evidenceLevel: captured
+mediaApproved: true
+cover: /media/projects/fps/cover.webp
+coverAlt: FPS 蓝图射击 Demo 的第一人称持枪画面与弹药 UI
+coverCaption: 第一人称射击 Demo · 持枪视角与弹药 UI
+demoHighlights: [ADS 与连续开火, 换弹与弹药 UI, 手臂和武器动画协作, 僵尸追击与受伤反馈]
+draft: false
+---
+
+import EngineeringFlow from '../../components/EngineeringFlow.astro';
+
+## 项目定位与系统职责
+
+这是一次以 Blueprint 为主的第一人称射击实践。我先运行已有实例，观察移动、瞄准、开火与换弹，再沿输入、角色、武器、动画和 UI 追踪实现，在自己的工程中重新组织玩法。重点是**操作互斥、弹药提交时机、命中反馈分发，以及多 AnimBP 的状态依赖**。
+
+| 模块 | 主要资产 | 职责与数据归属 |
+| --- | --- | --- |
+| 玩家 | `BP_FPSPlayer` | 输入、角色状态、速度与 FOV、生命值、当前武器与主 UI 引用 |
+| 武器行为 | `BP_Weaponbase` / `BI_Fire` | 连射 Timer、武器状态、弹药、射线、后坐力与换弹 |
+| 武器配置 | `BP_VIRTUS` | 弹匣容量、伤害、开火间隔、手臂与枪械 Montage |
+| 动画 | `ABP_FPSPlayer` / `ABP_VIRTUSFPSWeapon` | 消费移动与 ADS 状态，组织动作过渡和 Montage Slot |
+| 换弹提交 | `AN_Reload` | 在动画通知处调用 `Reload_Ammo()`，同步弹药 UI |
+| 敌人 | `ST_Zombie` / `STT_ZombieAttack` / `BP_Zombie` | 追击与攻击切换、攻击时窗、受伤与布娃娃死亡 |
+
+玩家通过 `SpawnWeapon(Class)` 创建武器，设置 Owner 为自身，将结果缓存为 `CurrentWeapon` 并附着到 Arm。Owner 关系也为武器动画查找玩家及手臂 AnimInstance 提供入口。基础行为放在武器基类，具体枪械保存数值与动画资源，避免角色蓝图承担全部射击细节。
+
+## 角色状态与 ADS 控制
+
+### 先解析操作意图，再选择状态
+
+`IMC_FPSInput` 提供 Move、Look、Run、Aim、Fire、Reloading。移动基于 ControlRotation 的 Yaw 计算前向和侧向向量；Run / Aim 输入改变 `Want to run`、`Want to aim`，由 `UpdatePlayerState()` 集中决定 `E_PlayerState`。
+
+状态判断有明确优先级：先检查瞄准意图；未瞄准时，前向输入 `MoveX > 0` 且按下 Run 才进入冲刺；其他情况根据移动输入或 CharacterMovement 的速度进入 Walk / Idle。
+
+| 角色状态 | 判定含义 | `MaxWalkSpeed` |
+| --- | --- | --- |
+| Idle | 没有有效移动 | 400 |
+| Walk | 普通移动 | 400 |
+| Run | 前向移动且有冲刺意图 | 600 |
+| Aim | 优先响应瞄准意图 | 265 |
+
+速度集中在 `UpdateMoveSpeed()` 里按枚举选择。开火入口另检查 `ISfiring`、`ISdead` 和 Run 状态，避免重复启动连射、死亡后开火以及冲刺姿态下进入射击。角色状态描述移动姿态，武器状态单独描述 Idle / Firing / Reloading，两者解决不同维度的互斥。
+
+### FOV 与瞄准灵敏度
+
+BeginPlay 缓存相机的 `DefaultFOV`。瞄准输入以 `FInterpTo(CurrentFOV, 75, DeltaSeconds, 8)` 收窄视野；退出 ADS 后，`OutFOV` 的循环 Timer 插值回默认值，在误差小于 `0.1` 时清除自身 Handle。开始瞄准会清除退出 ADS 的 Timer，避免两条 FOV 修改路径同时工作。
+
+Look 输入先乘 `MouseSensitivity`，再乘 `UpdateScopeSensitivity()` 返回的状态倍率：普通状态为 `1`，Aim 使用单独配置的 `OutSensetivity`。视野过渡与鼠标倍率分开处理，方便分别调节视觉缩放和瞄准控制。
+
+## 连射调度与单次射击
+
+### Timer 管开火节奏，Handle 管结束
+
+`StartWeaponfire` 只在武器处于 Idle 时进入。弹药大于零时，先调用一次 `Fire Internal`，再用 `FireRate` 创建循环 Timer，将返回值保存为 `Fire_timehandle`，并设置玩家 `ISfiring` 和武器 Firing 状态。第一次射击立即响应，后续射击由 Timer 调度。
+
+`BP_VIRTUS` 的配置为：弹匣 `30` 发、备弹 `180` 发、基础伤害 `25`、开火间隔 `0.1 秒`。这里 `FireRate` 存的是时间间隔。每次内部开火重新检查弹药；耗尽时进入 `Stop_Fire()`，松开 Fire 输入也调用这一入口，清除并失效 Timer Handle，再将武器恢复到 Idle。
+
+<EngineeringFlow label="一次射击的逻辑与表现链" steps={[
+  { title: '状态与弹药门控', detail: '玩家可射击，武器 Idle，弹匣有余量' },
+  { title: '调度单次开火', detail: '立即开火，再以 0.1 秒 Timer 连射' },
+  { title: '玩法与本地反馈', detail: '扣弹、更新 UI、Montage、后坐力和弹壳' },
+  { title: '射线命中分发', detail: '相机 Trace，根据 Physical Surface 选择反馈' },
+]} />
+
+### 相机射线负责判定，枪口负责表现
+
+命中采用 `LineTraceSingle`，起点取 Camera 的世界位置，终点为起点加相机 Forward Vector 乘 `10000`。使用视线确定命中方向，让判定与玩家观察方向一致；枪口 Niagara 则附着到 Barrel 的 `Muzzle`，承担开火表现。
+
+单次射击还包括弹匣减一、`MainUI.UpdateWeaponInfo(CurrentAmmo, TotalAmmo)`、`Casing` Socket 处生成 `BP_Casing`，以及 `MS_VIRTUS` MetaSound。手臂和枪械根据玩家 Idle / Walk / Aim 状态选择对应开火 Montage。
+
+后坐力直接叠加控制器输入：Pitch 为 `-0.4`，Yaw 在 `[-0.1, 0.1]` 范围随机扰动。这个实现把视觉反馈与射击入口连接起来，便于在蓝图中调节基础手感。
+
+## 换弹：动画通知提交弹药
+
+### 请求、表现、提交分成三个阶段
+
+`Reloading(Player)` 的入口要求武器 Idle、`TotalAmmo > 0` 且 `CurrentAmmo < Magsize`。条件通过后切换到 Reloading，播放枪械与手臂的 Reload Montage，并接入装填音效。此时再次开火或换弹会被武器状态门控挡住。
+
+弹药变化发生在 `AN_Reload.Received_Notify`：从 MeshComp 的 Owner 找到 `BP_Weaponbase`，调用 `Reload_Ammo()`，再把更新后的两份弹药数值传给 UI。**输入只发起换弹，动画通知才提交弹药**，让数量变化落在装填动作对应的时间点。
+
+### 部分备弹与完整装填使用同一套结算
+
+`Reload_Ammo()` 先计算缺口 `Magsize - CurrentAmmo`。备弹够用时，扣除缺口并把弹匣设为满；备弹不足时，把剩余备弹全部加入弹匣，再将备弹归零。蓝图分支等价于下面的伪代码：
+
+```text
+Needed = Magsize - CurrentAmmo
+Loaded = min(Needed, TotalAmmo)
+CurrentAmmo += Loaded
+TotalAmmo   -= Loaded
+```
+
+例如，`12 / 50`、容量 `30`，结算为 `30 / 32`；`12 / 7` 则结算为 `19 / 0`。在非负合法输入下，换弹前后的弹药总和不变，弹匣不会因为备弹不足而被凭空补满。提交后才刷新 UI，使玩法状态和显示来自同一次结算。
+
+换弹状态持续到 Montage 的完成回调恢复 Idle。当前请求统一使用 Empty Reload Montage；表现素材与弹药结算分开，因此同一结算函数可以承接不同的装填动画。
+
+## Physical Surface 命中反馈
+
+Trace 命中后，先检查 Blocking Hit，再保存 Hit Location 与 Normal。通过 `MakeRotFromX(Normal)` 构造特效朝向，并按 HitResult 的物理表面类型选择分支。
+
+| Surface | 命中表现 | 玩法处理 |
+| --- | --- | --- |
+| Dirt | `FX_SquibDirt`、泥土音效、弹孔 | 场景反馈 |
+| Metal | `FX_SquibMetal`、金属音效、金属弹孔材质 | 场景反馈 |
+| Wood | `FX_SquibWood`、木材音效、木材弹孔材质 | 场景反馈 |
+| Concrete / Default | 混凝土碎屑、音效与弹孔 | 默认反馈分支 |
+| Enemy | `Impact_Blood` | 对 HitActor 调用 `ApplyDamage(BaseDamage)` |
+
+分类入口由 Physical Material 提供，具体 Niagara、Sound 和 Decal 在反馈分支里选择。新增一种表面时可以围绕分类扩展表现，而不必改变连射与弹药逻辑。当前敌人伤害走 Enemy 分支，环境命中只生成对应反馈。
+
+## 一帧动画错位的排查
+
+### 从数值一致追到状态消费时机
+
+第一人称手臂和枪械分别使用 `ABP_FPSPlayer` 与 `ABP_VIRTUSFPSWeapon`。在 ADS 和状态切换时，我遇到手与枪一帧左右的错位：两边读取角色状态，却在画面中进入了不同的动作阶段。
+
+最初排查变量值，随后追踪状态从哪里产生、何时进入 AnimBP、由哪些过渡条件消费。调整后的结构让手臂统一读取 Gameplay 状态，武器读取手臂 AnimBP 的状态副本：
+
+<EngineeringFlow label="手臂与武器动画的数据依赖" steps={[
+  { title: 'BP_FPSPlayer', detail: '持有 MoveX / MoveY 与 E_PlayerState' },
+  { title: 'ABP_FPSPlayer', detail: '读取角色数据，组织手臂移动与 ADS 过渡' },
+  { title: 'ABP_VIRTUSFPSWeapon', detail: '从手臂 AnimInstance 取得对应状态' },
+]} />
+
+### 具体依赖如何建立
+
+武器 AnimBP 在 `BlueprintInitializeAnimation` 中，通过 OwningActor 找到 `BP_VIRTUS`，沿武器 Owner 找到 `BP_FPSPlayer`，再调用 `Arm.GetAnimInstance()`，转换并缓存为 `As ABP FPSPlayer`。后续从这个引用读取 `Move X`、`Move Y`、`E Player State` 和 `Movement`。
+
+手臂与枪械的状态机都包含移动、冲刺、ADS 及过渡动作。过渡条件同时读取枚举与 `GetRelevantAnimTimeRemaining`，部分条件使用剩余时间小于 `0.4 秒`，让过渡片段衔接持续状态。
+
+这次调整解决了当时观察到的错位，也明确了动画状态的来源。需要区分的是：**状态引用建立数据依赖，组件 Tick 和动画求值顺序由引擎调度**；把引用连接起来并不自动构成全局的同帧同步保证。排查动画问题时，应同时检查状态生产、过渡条件和更新阶段，而不是只看某一帧变量值。
+
+## StateTree 敌人攻击与生命循环
+
+### Chase 与 Attack 的任务边界
+
+`ST_Zombie` 在 Root 下组织 Chase 和 Attack。`STE_GetPlayer` 在 TreeStart 缓存 PlayerCharacter，输出 `PlayActor`，供移动任务和攻击 Task 绑定目标。Chase 使用移动任务，状态完成后转入 Attack；Attack 完成后返回 Chase。
+
+`STT_ZombieAttack` 进入状态时重置 `Time = 0`、`HasHit = false`，播放攻击 Montage 和声音。Tick 累加 DeltaTime，根据攻击时窗执行判定：
+
+```text
+Time += DeltaTime
+if Time >= HitTime and not HasHit:
+    if Distance(Actor, TargetActor) <= AttackRange:
+        ApplyDamage(TargetActor, Damage)
+        HasHit = true
+if Time >= AttackDuration:
+    FinishTask(true)
+```
+
+StateTree 实例配置为 `HitTime = 0.35 秒`、`AttackDuration = 0.78 秒`、`AttackRange = 170`、`Damage = 20`。伤害判定落在动作进行中的指定时刻；第一次成功命中后，`HasHit` 阻止本次攻击在后续 Tick 重复扣血。目标已移出范围则不会命中，直到任务结束再回到追击。
+
+### 受伤、恢复与死亡
+
+玩家的 `ReceiveAnyDamage` 扣除 Health，并清除正在进行的恢复 Timer。存活时使用 `RetriggerableDelay(5 秒)` 延后启动恢复，新的受伤会重新推迟恢复时机；随后每 `0.1 秒`增加 `1.5` 点生命，用 Clamp 限制到 MaxHealth，恢复满或死亡时停止 Timer。
+
+死亡分支设置 `ISdead`、禁用玩家输入，播放屏幕淡出与死亡 UI，并切换到 UI 输入模式。`DeadCameraFall` Timeline 插值相机 Pitch，表现视角倒下。
+
+僵尸收到伤害后更新自身 Health。生命耗尽时，通过一次性执行门控进入死亡：设置 IsDead、Controller UnPossess、关闭 Capsule 碰撞，将 Mesh 改为 Ragdoll 碰撞并开启物理模拟，`5 秒`后销毁 Actor。行为控制、碰撞和物理表现各自结束，尸体短暂保留后清理。
+
+## 实现取舍与技术收获
+
+项目采用相机 Hitscan、蓝图 Timer 和 Physical Surface 分支，适合快速建立射击与反馈循环；弹壳是表现对象，命中判定由射线负责。武器基类集中行为，子类配置数值和动画，但部分资源仍直接引用 VIRTUS，当前复用程度主要覆盖这把枪的行为组织。
+
+最有价值的收获是把“射击手感”拆到可以讨论的实现点：Timer 的启动与清理决定连射生命周期，AnimNotify 决定装填提交时机，物理表面决定命中表现，AnimBP 的状态来源决定手与枪如何协作。个人工作集中在这些玩法逻辑的重建、接入和排查，枪械模型、角色、音效、动画与特效使用现有素材。

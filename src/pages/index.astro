@@ -3,11 +3,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import ProjectShowcase from '../components/ProjectShowcase.astro';
 import { getPublishedProjects } from '../lib/projects';
+import { featuredProjectIds } from '../config/featured-projects';
+
 const projects = await getPublishedProjects();
+const publishedById = new Map(projects.map((project) => [project.id, project]));
+// This list controls the small hero navigation only. Showcase remains fully automatic.
+const featuredProjects = featuredProjectIds.map((id) => {
+  const project = publishedById.get(id);
+  if (!project) throw new Error(`代表作品 ${id} 不存在或尚未公开，请检查 featured-projects.ts`);
+  return project;
+});
 ---
 <BaseLayout title="ICE · 让规则凝成世界" description="ICE：Unreal Engine Gameplay 与 C++ 游戏开发作品集。" home>
   <main id="main" tabindex="-1">
-    <Hero projects={projects} />
+    <Hero projects={featuredProjects} />
     <ProjectShowcase projects={projects} />
     <section class="about wrap" id="about" aria-label="关于这个作品集"><div><p class="eyebrow">ABOUT / ENGINEERING FOCUS</p><h2>Gameplay 系统设计<br />与客户端工程实践。</h2></div><div><p>聚焦 Unreal Engine 客户端开发与 C++ 系统实现。通过项目案例呈现负责模块、核心设计、技术取舍与实际验证情况。</p></div></section>
   </main>

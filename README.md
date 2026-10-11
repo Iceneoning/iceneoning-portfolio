@@ -2,6 +2,8 @@
 
 Unreal Engine / C++ Gameplay Engineering 个人作品集。独立于 Fuwari 博客部署。
 
+2026-10-11 内容更新：Challenge / FPS 代表作已补充技术案例，BoardLine 已按当前 C++ 工程补充技术章节。三部作品的完整演示视频与 BoardLine 主视觉已经压缩并接入；媒体路径约定见 [作品媒体接入说明](docs/content/06-project-media-and-details.md)，压缩参数与原文件保存位置见 [媒体优化记录](docs/content/09-media-optimization.md)。
+
 ## 当前阶段
 
 V8 已迁移至正式 Astro 源码（2026-10-09）。依赖安装、类型检查与静态构建已完成；首页和两部独立案例已在 1440px / 390px 浏览器中检查。公开的 UE 截图、视频与工程证据仍待补，页面明确标注资料状态。详细结果见 [V8 Astro 验收记录](docs/implementation/05-v8-astro-acceptance.md)。
@@ -37,6 +39,8 @@ Node.js 22.12+、pnpm 10.28.1。已有 `pnpm-lock.yaml`，使用锁文件重现�
 使用 `pnpm preview --port 4323` 启动构建预览，之后可执行 `pnpm verify:build http://127.0.0.1:4323/`，同时检查静态链接、锚点、HTTP 路由与资源。浏览器截图及实测记录在 `docs/implementation/qa-v8-astro/`。
 
 ## 内容与路由
+
+发布文件单个不得超过 25 MiB。`pnpm verify:build` 会检查 `dist/` 中每个文件的字节数。原始视频和封面保存在本地 `media-source/`，该目录已被 Git 忽略，也不会进入 Astro 发布产物。`scripts/optimize-media.mjs` 使用系统 FFmpeg 做 H.264 / AAC 双遍编码、MP4 faststart，以及 Sharp WebP 压缩；对已有发布文件和备份拒绝覆盖。
 
 - `/`：冬日工坊首页、首屏项目入口和作品选集。
 - `/projects/rts-gameplay-systems/`：RTS 独立案例。
