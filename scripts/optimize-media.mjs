@@ -1,9 +1,10 @@
 // Preserve source media locally and publish browser-compatible assets below 25 MiB.
 // Requires ffmpeg / ffprobe on PATH; uses the project's existing sharp package.
+// Update one video with a verified backup: node scripts/optimize-media.mjs --project=challenge --replace
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { access, mkdir, rename, stat, writeFile } from 'node:fs/promises';
+import { access, copyFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -11,13 +12,28 @@ import sharp from 'sharp';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const limit = 25 * 1024 * 1024;
 const targetBytes = 24 * 1024 * 1024;
-const work = join(root, 'media-source', '.work');
+const args = process.argv.slice(2);
+const selectedSlug = args.find((arg) => arg.startsWith('--project='))?.slice('--project='.length);
+const replace = args.includes('--replace');
+if (args.some((arg) => arg !== '--replace' && !/^--project=(challenge|fps|blitz-archive)$/.test(arg))
+  || args.filter((arg) => arg.startsWith('--project=')).length > 1) {
+  throw new Error('Usage: node scripts/optimize-media.mjs [--project=challenge|fps|blitz-archive] [--replace]');
+}
+const work = join(root, 'media-source', '.work', new Date().toISOString().replaceAll(/[:.]/g, '-'));
 const report = [];
-const inputs = [
-  { slug: 'challenge', incoming: 'public/Video/Challenge/Chanllenge.mp4', original: 'media-source/challenge/Chanllenge.mp4' },
+const allInputs = [
+  { slug: 'challenge', incoming: 'public/Video/Challenge/Challenge.mp4', original: 'media-source/challenge/Challenge.mp4' },
   { slug: 'fps', incoming: 'public/Video/FPS/FPS.mp4', original: 'media-source/fps/FPS.mp4' },
   { slug: 'blitz-archive', incoming: 'public/Video/blitz-archive/BoardLine.mp4', original: 'media-source/blitz-archive/BoardLine.mp4' },
 ];
+if (selectedSlug && !allInputs.some((item) => item.slug === selectedSlug)) throw new Error(`Unknown project: ${selectedSlug}`);
+const inputs = allInputs.filter((item) => !selectedSlug || item.slug === selectedSlug);
+const includeCover = !selectedSlug;
+const reportPath = join(root, 'media-source', 'optimization-report.json');
+const previousReport = JSON.parse(await readFile(reportPath, 'utf8').catch((error) => {
+  if (error.code === 'ENOENT') return '{"assets":[]}';
+  throw error;
+}));
 
 function workspacePath(relative) {
   const absolute = resolve(root, relative);
@@ -59,15 +75,28 @@ async function sourceFor(item) {
   throw new Error(`Source media missing: ${item.incoming}`);
 }
 
-// Fail before encoding if a rerun would replace any published file or backup.
+// Replacements are explicit; keep the previous published asset as a local backup.
+async function publish(temporary, destination) {
+  if (await exists(destination)) {
+    if (!replace) throw new Error(`Preserving existing output; use --replace to back up and update: ${destination}`);
+    const backup = join(work, `${destination.split(sep).slice(-2).join('-')}.previous`);
+    await copyFile(destination, backup);
+    if (await hash(backup) !== await hash(destination)) throw new Error(`Backup verification failed: ${backup}`);
+    console.log(`Previous output preserved: ${backup}`);
+  }
+  await mkdir(dirname(destination), { recursive: true });
+  await rename(temporary, destination);
+}
+
+// Fail before encoding if source archiving would replace an existing original.
 const coverItem = { incoming: 'public/media/projects/blitz-archive/未来学院护送战线.png', original: 'media-source/blitz-archive/未来学院护送战线.png' };
-for (const item of [...inputs, coverItem]) {
+for (const item of [...inputs, ...(includeCover ? [coverItem] : [])]) {
   const source = await sourceFor(item);
   const original = workspacePath(item.original);
   if (source !== original && await exists(original)) throw new Error(`Archive destination already exists: ${original}`);
 }
-for (const destination of [...inputs.map((item) => workspacePath(`public/media/projects/${item.slug}/demo.mp4`)), workspacePath('public/media/projects/blitz-archive/cover.webp')]) {
-  if (await exists(destination)) throw new Error(`Preserving existing output; move it aside before rerun: ${destination}`);
+for (const destination of [...inputs.map((item) => workspacePath(`public/media/projects/${item.slug}/demo.mp4`)), ...(includeCover ? [workspacePath('public/media/projects/blitz-archive/cover.webp')] : [])]) {
+  if (await exists(destination) && !replace) throw new Error(`Preserving existing output; use --replace to back up and update: ${destination}`);
 }
 await mkdir(work, { recursive: true });
 await Promise.all(inputs.map(async (item) => {
@@ -100,10 +129,9 @@ await Promise.all(inputs.map(async (item) => {
     || outputVideo.codec_name !== 'h264' || outputVideo.pix_fmt !== 'yuv420p'
     || (hasAudio && outputAudio?.codec_name !== 'aac')) throw new Error(`Output verification failed: ${item.slug}`);
   await run('ffmpeg', ['-v', 'error', '-xerror', '-nostdin', '-i', temporary, '-f', 'null', 'NUL'], { log: join(work, `${item.slug}-decode.log`) });
+  if (await hash(source) !== sourceHash) throw new Error(`Source changed during processing: ${source}`);
   const destination = workspacePath(`public/media/projects/${item.slug}/demo.mp4`);
-  if (await exists(destination)) throw new Error(`Preserving existing output; move it aside before rerun: ${destination}`);
-  await mkdir(dirname(destination), { recursive: true });
-  await rename(temporary, destination);
+  await publish(temporary, destination);
   report.push({ slug: item.slug, kind: 'video', source, original: workspacePath(item.original), sourceHash,
     sourceBytes: Number(metadata.format.size), output: destination, outputBytes: bytes,
     duration: Number(output.format.duration), width: outputVideo.width, height: outputVideo.height,
@@ -111,17 +139,21 @@ await Promise.all(inputs.map(async (item) => {
   console.log(`${item.slug}: verified ${(bytes / 1024 / 1024).toFixed(2)} MiB`);
 }));
 
-const coverSource = await sourceFor(coverItem);
-const coverHash = await hash(coverSource);
-const coverDestination = workspacePath('public/media/projects/blitz-archive/cover.webp');
-if (await exists(coverDestination)) throw new Error(`Preserving existing cover: ${coverDestination}`);
-await sharp(coverSource).rotate().resize({ width: 1600, withoutEnlargement: true }).webp({ quality: 84, effort: 6 }).toFile(coverDestination);
-const coverMetadata = await sharp(coverDestination).metadata();
-const coverBytes = (await stat(coverDestination)).size;
-if (coverBytes >= limit || coverMetadata.format !== 'webp') throw new Error('Cover verification failed');
-report.push({ slug: 'blitz-archive', kind: 'cover', source: coverSource, original: workspacePath(coverItem.original),
-  sourceHash: coverHash, sourceBytes: (await stat(coverSource)).size, output: coverDestination,
-  outputBytes: coverBytes, width: coverMetadata.width, height: coverMetadata.height });
+if (includeCover) {
+  const coverSource = await sourceFor(coverItem);
+  const coverHash = await hash(coverSource);
+  const coverDestination = workspacePath('public/media/projects/blitz-archive/cover.webp');
+  const coverTemporary = join(work, 'blitz-archive-cover.webp');
+  await sharp(coverSource).rotate().resize({ width: 1600, withoutEnlargement: true }).webp({ quality: 84, effort: 6 }).toFile(coverTemporary);
+  const coverMetadata = await sharp(coverTemporary).metadata();
+  const coverBytes = (await stat(coverTemporary)).size;
+  if (coverBytes >= limit || coverMetadata.format !== 'webp') throw new Error('Cover verification failed');
+  if (await hash(coverSource) !== coverHash) throw new Error(`Source changed during processing: ${coverSource}`);
+  await publish(coverTemporary, coverDestination);
+  report.push({ slug: 'blitz-archive', kind: 'cover', source: coverSource, original: workspacePath(coverItem.original),
+    sourceHash: coverHash, sourceBytes: (await stat(coverSource)).size, output: coverDestination,
+    outputBytes: coverBytes, width: coverMetadata.width, height: coverMetadata.height });
+}
 
 // Archive exact source files only after every encoded output has been verified.
 for (const item of report) {
@@ -133,5 +165,6 @@ for (const item of report) {
   }
   if (await hash(item.original) !== item.sourceHash) throw new Error(`Archive verification failed: ${item.original}`);
 }
-await writeFile(join(root, 'media-source', 'optimization-report.json'), JSON.stringify({ limitBytes: limit, targetBytes, assets: report }, null, 2));
+const assets = [...previousReport.assets.filter((previous) => !report.some((item) => item.slug === previous.slug && item.kind === previous.kind)), ...report];
+await writeFile(reportPath, JSON.stringify({ limitBytes: limit, targetBytes, assets }, null, 2));
 console.log(JSON.stringify(report.map(({ slug, kind, outputBytes, width, height, duration }) => ({ slug, kind, MiB: +(outputBytes / 1024 / 1024).toFixed(3), width, height, duration })), null, 2));

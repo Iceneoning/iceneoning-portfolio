@@ -7,13 +7,60 @@ const media = getProjectMedia(project);
 ---
 <section class="case-demo" id="demo" aria-labelledby="demo-title">
   <div class="demo-heading"><div><p class="eyebrow">GAMEPLAY / VIDEO</p><h2 id="demo-title">视频演示<span class="accent">。</span></h2></div><span class="demo-status">{media.sources.length ? '实机演示' : '即将上线'}</span></div>
-  {media.sources.length ? <video class="demo-player" controls playsinline preload="none" poster={media.cover} aria-label={`${project.data.title} 实机演示`}>
+  {media.sources.length ? <div class="demo-video" data-video-player tabindex="0" role="group" aria-label={`${project.data.title} 视频播放器`} aria-describedby="demo-shortcuts">
+  <div class="demo-screen" data-video-surface>
+  <video class="demo-player" controls playsinline preload="metadata" poster={media.cover} aria-label={`${project.data.title} 实机演示`}>
     {media.sources.map((source) => <source src={source.src} type={source.type} />)}
     <p>当前浏览器无法播放此视频。<a href={media.sources[0]?.src}>下载演示视频</a></p>
-  </video> : <div class="demo-placeholder" role="note" aria-label={`${project.data.title} 视频演示预留位置`}>
+  </video>
+  <output class="demo-gesture" data-video-gesture hidden></output>
+  </div>
+  <button class="demo-center-play" type="button" data-video-center-play aria-label="开始播放视频" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 11 7-11 7Z" fill="currentColor" /></svg>
+  </button>
+  <div class="demo-controls" data-video-controls hidden>
+    <div class="demo-timeline">
+      <div class="demo-progress-track" aria-hidden="true"><span class="demo-buffered"></span><span class="demo-progress-fill"></span></div>
+      <input data-video-seek type="range" min="0" max="0" value="0" step="0.1" disabled aria-label="视频播放进度" />
+      <output class="demo-seek-preview" data-video-preview hidden></output>
+    </div>
+    <div class="demo-actions">
+      <button class="demo-icon-button" type="button" data-video-play aria-label="播放视频" title="播放 / 暂停（空格）">
+        <svg class="demo-play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8Z" fill="currentColor" /></svg>
+        <svg class="demo-pause-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4v16H6zm8 0h4v16h-4Z" fill="currentColor" /></svg>
+      </button>
+      <span class="demo-time"><span data-video-current>0:00</span><span class="demo-time-separator"> / </span><span data-video-duration>0:00</span></span>
+      <div class="demo-volume">
+        <button class="demo-icon-button" type="button" data-video-volume-toggle aria-label="音量" aria-expanded="false" aria-controls="demo-volume-panel" title="音量">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m11 4-6 5H2v6h3l6 5Z" /><path class="demo-volume-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path class="demo-volume-cross" d="m16 9 6 6m0-6-6 6" /></svg>
+        </button>
+        <div class="demo-volume-panel" id="demo-volume-panel" data-video-volume-panel hidden>
+          <input type="range" data-video-volume min="0" max="1" step="0.05" value="1" aria-label="视频音量" />
+          <button type="button" data-video-mute aria-label="静音" aria-pressed="false">静音</button>
+        </div>
+      </div>
+      <div class="demo-speed">
+        <button class="demo-rate-button" type="button" data-video-rate aria-label="播放倍速" aria-haspopup="menu" aria-expanded="false" aria-controls="demo-rate-menu" title="播放倍速（[ / ]）">倍速</button>
+        <div class="demo-rate-menu" id="demo-rate-menu" data-video-rate-menu role="menu" aria-label="播放倍速" hidden>
+          {[2, 1.75, 1.5, 1.25, 1, 0.75, 0.5].map((rate) => <button type="button" data-video-rate-value={rate} role="menuitemradio" aria-checked={rate === 1} tabindex="-1">{rate === 1 ? '正常' : `${rate}×`}</button>)}
+        </div>
+      </div>
+      <button class="demo-icon-button" type="button" data-video-fullscreen aria-label="全屏观看" title="全屏（F）">
+        <svg class="demo-fullscreen-enter" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6" /></svg>
+        <svg class="demo-fullscreen-exit" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9h6V3m12 6h-6V3M9 21v-6H3m12 6v-6h6" /></svg>
+      </button>
+    </div>
+  </div>
+  <p class="demo-feedback" data-video-feedback role="status" aria-live="polite" hidden></p>
+  <p class="demo-sr-only" id="demo-shortcuts">点击画面播放或暂停，左右滑动调整进度。空格播放或暂停，左右方向键跳转，左右方括号调整倍速。</p>
+  </div> : <div class="demo-placeholder" role="note" aria-label={`${project.data.title} 视频演示预留位置`}>
     <span class="demo-placeholder-mark" aria-hidden="true">↗</span>
     <p class="eyebrow">{project.data.posterCode} / GAMEPLAY PREVIEW</p>
     <strong>把玩法留给画面。</strong><p>实机演示即将上线。</p>
   </div>}
   {project.data.demoHighlights.length > 0 && <ul class="demo-highlights" aria-label="演示重点">{project.data.demoHighlights.map((item) => <li>{item}</li>)}</ul>}
 </section>
+
+<script>
+  import '../scripts/video-player';
+</script>

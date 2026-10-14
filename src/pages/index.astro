@@ -18,6 +18,21 @@ const featuredProjects = featuredProjectIds.map((id) => {
   <main id="main" tabindex="-1">
     <Hero projects={featuredProjects} />
     <ProjectShowcase projects={projects} />
-    <section class="about wrap" id="about" aria-label="关于这个作品集"><div><p class="eyebrow">ABOUT / ENGINEERING FOCUS</p><h2>Gameplay 系统设计<br />与客户端工程实践。</h2></div><div><p>聚焦 Unreal Engine 客户端开发与 C++ 系统实现。通过项目案例呈现负责模块、核心设计、技术取舍与实际验证情况。</p></div></section>
+    <section class="about wrap" id="about" aria-label="关于这个作品集">
+      <div>
+        <p class="eyebrow">ABOUT / ENGINEERING FOCUS</p>
+        <h2>Gameplay 系统设计<br />与客户端工程实践。</h2>
+      </div>
+      <div>
+        <p>聚焦 Unreal Engine 客户端开发与 C++ 系统实现。通过项目案例呈现负责模块、核心设计、技术取舍与实际验证情况。</p>
+        <a class="about-demo-link" href="https://pan.quark.cn/s/a831fd3701c4" target="_blank" rel="noopener noreferrer" aria-label="前往夸克网盘下载 Demo（在新标签页打开）">
+          <span>
+            <strong class="about-demo-label">前往下载 Demo</strong>
+            <span class="about-demo-source">夸克网盘 · 外部链接</span>
+          </span>
+          <span class="about-demo-arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </section>
   </main>
 </BaseLayout>

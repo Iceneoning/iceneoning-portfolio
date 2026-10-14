@@ -33,7 +33,7 @@ for (const [file, html] of htmlByPath) {
   const route = file.slice(dist.length).replaceAll('\\', '/').replace(/index\.html$/, '');
   check(`${route}: single H1`, (html.match(/<h1(?:\s|>)/g) || []).length === 1);
   const scriptCount = (html.match(/<script(?:\s|>)/g) || []).length;
-  check(`${route}: expected client scripts`, route === '/' ? scriptCount === 2 : scriptCount === 1, String(scriptCount));
+  check(`${route}: expected client scripts`, route === '/' || route.startsWith('/projects/') ? scriptCount === 2 : scriptCount === 1, String(scriptCount));
   check(`${route}: no decorative canvas`, !/<canvas/.test(html));
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
   check(`${route}: unique element and SVG gradient IDs`, new Set(ids).size === ids.length);
@@ -99,6 +99,10 @@ for (const [index, slug] of orderedSlugs.entries()) {
   check(`${slug}: interview copy excludes internal editorial notes`, !/真实验证与待补资料|资料状态|CONTENT REVIEW|复用博客|来源和授权待核对|本轮未|本轮没有|id="evidence"/.test(html));
   check(`${slug}: video demonstration slot and navigation`, html.includes('id="demo"') && html.includes('href="#demo"') && html.includes('id="demo-title"'));
   check(`${slug}: empty video slots do not request missing media`, !/<video\b[^>]*>\s*<\/video>/.test(html));
+  if (html.includes('<video')) {
+    check(`${slug}: functional player controls rendered`, ['data-video-player', 'data-video-seek', 'data-video-rate', 'data-video-rate-value', 'data-video-surface', 'data-video-volume'].every((attribute) => html.includes(attribute)));
+    check(`${slug}: native player retained before enhancement`, /<video\b[^>]*\bcontrols\b/.test(html));
+  }
   for (const [direction, adjacentSlug] of [
     ['上一部作品', orderedSlugs[index - 1]],
     ['下一部作品', orderedSlugs[index + 1]],
