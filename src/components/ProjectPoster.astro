@@ -1,21 +1,22 @@
 ---
-import { projectHref, projectNumber, type Project } from '../lib/projects';
+import { projectDate, projectHref, type Project } from '../lib/projects';
 import PortfolioArtwork from './PortfolioArtwork.astro';
 import { getProjectMedia } from '../lib/project-media';
 interface Props { project: Project; }
 const { project } = Astro.props;
 const { data } = project;
 const media = getProjectMedia(project);
+const date = projectDate(project);
 ---
 <a class:list={['project', { 'project--ba': data.tone === 'warm' }]} href={projectHref(project)} aria-label={`查看 ${data.title} 技术案例`}>
   <div class="project-visual">
     {media.cover ? <img class="project-cover" src={media.cover} alt={media.coverAlt} loading="lazy" width="1280" height="720" /> : media.awaitingCover ? <div class="project-cover-pending"><span class="eyebrow">BOARDLINE 57 / IN DEVELOPMENT</span><strong>BoardLine 57</strong><span>项目封面待上传</span></div> : <>
       <PortfolioArtwork warm={data.tone === 'warm'} />
-      <span class="project-visual-label">{data.status === '开发中' ? '正在开发，敬请期待' : 'AI 概念插画 · 非 UE 项目画面'}</span>
+      <span class="project-visual-label">{data.status === '开发中' ? '正在开发，敬请期待' : 'AI 概念插画 · 非项目实机画面'}</span>
     </>}
   </div>
   <div class="project-info">
-    <p class="project-genre"><span>{data.genre}</span><span class="project-number" aria-hidden="true">{projectNumber(project)}</span></p>
+    <p class="project-genre"><span>{data.genre}</span>{date && <span class="project-date">{date}</span>}</p>
     <div class="project-title"><h3>{data.title}</h3></div>
     <p class="project-caption">{data.subtitle}</p>
     <ul class="project-tags" aria-label="项目关键词">{data.keywords.map((keyword) => <li>{keyword}</li>)}</ul>

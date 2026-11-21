@@ -15,18 +15,18 @@ const targetBytes = 24 * 1024 * 1024;
 const args = process.argv.slice(2);
 const selectedSlug = args.find((arg) => arg.startsWith('--project='))?.slice('--project='.length);
 const replace = args.includes('--replace');
-if (args.some((arg) => arg !== '--replace' && !/^--project=(challenge|fps|blitz-archive)$/.test(arg))
-  || args.filter((arg) => arg.startsWith('--project=')).length > 1) {
-  throw new Error('Usage: node scripts/optimize-media.mjs [--project=challenge|fps|blitz-archive] [--replace]');
-}
 const work = join(root, 'media-source', '.work', new Date().toISOString().replaceAll(/[:.]/g, '-'));
 const report = [];
 const allInputs = [
   { slug: 'challenge', incoming: 'public/Video/Challenge/Challenge.mp4', original: 'media-source/challenge/Challenge.mp4' },
   { slug: 'fps', incoming: 'public/Video/FPS/FPS.mp4', original: 'media-source/fps/FPS.mp4' },
   { slug: 'blitz-archive', incoming: 'public/Video/blitz-archive/BoardLine.mp4', original: 'media-source/blitz-archive/BoardLine.mp4' },
+  { slug: 'console-ray-tracing', incoming: 'public/Video/console-ray-tracing/demo.mp4', original: 'media-source/console-ray-tracing/demo.mp4', targetBytes: 6 * 1024 * 1024, maxHeight: 960 },
 ];
-if (selectedSlug && !allInputs.some((item) => item.slug === selectedSlug)) throw new Error(`Unknown project: ${selectedSlug}`);
+if (args.some((arg) => arg !== '--replace' && !allInputs.some(({ slug }) => arg === `--project=${slug}`))
+  || args.filter((arg) => arg.startsWith('--project=')).length > 1) {
+  throw new Error(`Usage: node scripts/optimize-media.mjs [--project=${allInputs.map(({ slug }) => slug).join('|')}] [--replace]`);
+}
 const inputs = allInputs.filter((item) => !selectedSlug || item.slug === selectedSlug);
 const includeCover = !selectedSlug;
 const reportPath = join(root, 'media-source', 'optimization-report.json');
@@ -108,12 +108,12 @@ await Promise.all(inputs.map(async (item) => {
   const hasAudio = metadata.streams.some((stream) => stream.codec_type === 'audio');
   if (!Number.isFinite(duration) || duration <= 0 || !inputVideo) throw new Error(`Invalid source: ${source}`);
   const audioKbps = hasAudio ? 96 : 0;
-  const videoKbps = Math.floor(targetBytes * 8 / duration / 1000 - audioKbps - 12);
+  const videoKbps = Math.floor((item.targetBytes ?? targetBytes) * 8 / duration / 1000 - audioKbps - 12);
   if (videoKbps < 300) throw new Error(`Video needs a different size strategy: ${item.slug}`);
   const temporary = join(work, `${item.slug}-demo.mp4`);
   const passlog = join(work, `${item.slug}-pass`);
   const common = ['-hide_banner', '-nostdin', '-y', '-i', source, '-map', '0:v:0',
-    '-vf', "scale=-2:'min(720,ih)',setsar=1", '-r', '30', '-c:v', 'libx264', '-preset', 'medium',
+    '-vf', `scale=-2:'min(${item.maxHeight ?? 720},ih)',setsar=1`, '-r', '30', '-c:v', 'libx264', '-preset', 'medium',
     '-threads', '4', '-b:v', `${videoKbps}k`, '-pix_fmt', 'yuv420p', '-profile:v', 'high',
     '-g', '60', '-passlogfile', passlog];
   console.log(`${item.slug}: ${duration.toFixed(2)}s, video ${videoKbps} kbps; encoding pass 1/2`);

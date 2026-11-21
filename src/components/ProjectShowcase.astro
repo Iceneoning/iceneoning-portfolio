@@ -6,11 +6,11 @@ interface Props { projects: Project[]; }
 const { projects } = Astro.props;
 const firstProject = projects[0];
 ---
-<section class="gallery" id="screenings" aria-labelledby="screenings-title" data-showcase>
+<section class="gallery game-gallery" id="games" aria-labelledby="games-title" data-showcase>
   <div class="showcase-stage" data-showcase-stage>
     <div class="wrap">
       <div class="section-head">
-        <h2 id="screenings-title">作品选集<span class="accent">。</span></h2>
+        <div class="game-gallery-heading"><h2 id="games-title">游戏放映厅</h2><p class="archive-intro">玩法、交互与游戏系统的设计和实现。</p></div>
         {projects.length > 0 && <div class="showcase-toolbar">
           <span class="showcase-count" aria-live="polite" aria-atomic="true"><span data-showcase-current>01</span><span class="showcase-count-divider"> / </span>{String(projects.length).padStart(2, '0')}</span>
           <div class="showcase-controls" aria-label="作品切换">
@@ -21,7 +21,7 @@ const firstProject = projects[0];
       </div>
       {firstProject ? <>
         <div class="showcase-viewport" data-showcase-viewport>
-          <div id="showcase-track" class="showcase-track" data-showcase-track role="region" aria-label="可循环浏览的代表作品" tabindex="0">
+          <div id="showcase-track" class="showcase-track" data-showcase-track role="region" aria-label="可循环浏览的游戏作品" tabindex="0">
             {projects.map((project, index) => <div
               class="showcase-slide"
               data-showcase-slide
@@ -105,7 +105,7 @@ const firstProject = projects[0];
       if (next) next.disabled = count <= 1;
       progressLine?.style.setProperty('--showcase-progress', Math.round((activeIndex + 1) / count * 100) + '%');
       if (cta) {
-        cta.href = slides[activeIndex]?.dataset.href ?? '#screenings';
+        cta.href = slides[activeIndex]?.dataset.href ?? '#games';
         cta.setAttribute('aria-label', '查看 ' + (slides[activeIndex]?.dataset.title ?? '当前') + ' 项目案例');
       }
     };

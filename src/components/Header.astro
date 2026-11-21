@@ -1,11 +1,10 @@
 ---
-interface Props { home?: boolean; edition?: string; }
+interface Props { home?: boolean; }
 const { home = false } = Astro.props;
 ---
 <header class="site-header">
   <div class="header-inner wrap">
-    <a class="brand" href="/" aria-label="ICE 作品集首页"><img class="brand-mark" src="/visuals/ice-mark.svg" width="32" height="32" alt="" /><span>ICE<span class="brand-divider" aria-hidden="true">/</span><small>GAMEPLAY ENGINEER</small></span></a>
-    <nav aria-label="主导航"><a href={home ? '#screenings' : '/#screenings'}>作品选集</a><a href={home ? '#about' : '/#about'}>关于</a></nav>
-    <span class="header-edition"><i aria-hidden="true"></i> UNREAL ENGINE / C++</span>
+    <a class="brand" href="/" aria-label="ICE 创作档案首页"><img class="brand-mark" src="/visuals/ice-mark.svg" width="32" height="32" alt="" /><span>ICE<span class="brand-divider" aria-hidden="true"></span><small>CREATIVE ARCHIVE</small></span></a>
+    <nav aria-label="主导航"><a href={home ? '#games' : '/#games'}>游戏</a><a href={home ? '#about' : '/#about'}>关于</a></nav>
   </div>
 </header>

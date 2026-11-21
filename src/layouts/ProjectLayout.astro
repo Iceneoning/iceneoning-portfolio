@@ -5,38 +5,68 @@ import NextProject from '../components/NextProject.astro';
 import PortfolioArtwork from '../components/PortfolioArtwork.astro';
 import ProjectDemo from '../components/ProjectDemo.astro';
 import { getProjectMedia } from '../lib/project-media';
-import { projectNumber, type Project } from '../lib/projects';
-interface Props { project: Project; previousProject?: Project; nextProject?: Project; total: number; headings: MarkdownHeading[]; }
-const { project, previousProject, nextProject, total, headings } = Astro.props;
+import { projectDate, projectNumber, type Project } from '../lib/projects';
+interface Props { project: Project; previousProject?: Project; nextProject?: Project; headings: MarkdownHeading[]; }
+const { project, previousProject, nextProject, headings } = Astro.props;
 const { data } = project;
 const number = projectNumber(project);
+const date = projectDate(project);
+const hasContribution = Boolean(data.role || data.personalScope.length);
+const hasProjectDetails = Boolean(hasContribution || data.integratedSystems.length || data.sourceUrl);
 const chapters = headings.filter((heading) => heading.depth === 2);
+const firstChapter = chapters[0];
 const media = getProjectMedia(project);
+const showDemo = media.sources.length > 0 || (data.category === 'games' && data.status === '开发中');
+const showChapterNav = chapters.length > 1 || hasProjectDetails || data.gallery.length > 0;
+const showHeroMedia = hasContribution || !media.sources.length;
 ---
-<BaseLayout title={`${data.title} · ICE Portfolio`} description={data.summary} edition={`CASE ${number} / ${String(total).padStart(2, '0')} · WINTER EMBLEM`}>
+<BaseLayout title={`${data.title} · ICE Creative Archive`} description={data.summary}>
   <main id="main" tabindex="-1">
+    <div class="reading-progress" aria-hidden="true" data-reading-progress hidden></div>
     <section class:list={['case-hero', {'case-hero--warm':data.tone === 'warm'}]} aria-labelledby="project-title"><div class="wrap">
-      <div class="case-title-row"><div><p class="eyebrow">PROJECT {number} / CASE STUDY</p><h1 id="project-title">{data.titleLines[0]}<br /><em>{data.titleLines[1]}</em></h1><p class="tagline">{data.subtitle}</p></div><div class="case-intro"><p class="case-summary">{data.summary}</p></div></div>
+      <div class="case-title-row">
+        <div>
+          <p class="eyebrow">{hasContribution ? `PROJECT ${number} / CASE STUDY` : data.genre}</p>
+          <h1 id="project-title">{data.titleLines[0]}<br /><em>{data.titleLines[1]}</em></h1>
+          <p class="tagline">{data.subtitle}</p>
+        </div>
+        <div class="case-intro">
+          <p class="case-summary">{data.summary}</p>
+          {firstChapter && <a class="case-read-link" href={`#${firstChapter.slug}`}>阅读技术实现 <span aria-hidden="true">↓</span></a>}
+        </div>
+      </div>
       {data.status === '开发中' && <div class="case-development-note" role="note"><strong>正在开发，敬请期待</strong><span>项目仍在持续迭代，以下技术介绍为当前阶段的实现记录。</span></div>}
-      {media.cover ? <figure class="case-capture"><img src={media.cover} alt={media.coverAlt} width="1280" height="720" fetchpriority="high" /><figcaption>{media.coverCaption}</figcaption></figure> : media.awaitingCover ? <div class="project-cover-pending case-cover-pending"><span class="eyebrow">BOARDLINE 57 / IN DEVELOPMENT</span><strong>BoardLine 57</strong><span>项目封面待上传</span></div> : <>
-        <div class="case-concept"><PortfolioArtwork warm={data.tone === 'warm'} wide /><span>网站 AI 概念插画 · 非 UE 项目画面</span></div>
-      </>}
-      <div class="case-facts"><div><small>ENGINE</small><strong>{data.engine}</strong></div><div><small>PERSONAL CONTRIBUTION</small><strong>{data.role}</strong></div><div><small>KEYWORDS</small><strong>{data.keywords.join(' / ')}</strong></div><div><small>STATUS</small><strong>{data.status}</strong></div></div>
-      <ProjectDemo project={project} />
+      {showHeroMedia && (media.cover ? <figure class="case-capture"><img src={media.cover} alt={media.coverAlt} width="1280" height="720" fetchpriority="high" /><figcaption>{media.coverCaption}</figcaption></figure> : media.awaitingCover ? <div class="project-cover-pending case-cover-pending"><span class="eyebrow">BOARDLINE 57 / IN DEVELOPMENT</span><strong>BoardLine 57</strong><span>项目封面待上传</span></div> : showDemo && <>
+        <div class="case-concept"><PortfolioArtwork warm={data.tone === 'warm'} wide /><span>网站 AI 概念插画 · 非项目实机画面</span></div>
+      </>)}
+      <div class="case-facts">
+        <div><small>{data.stack.length ? 'TECH STACK' : 'ENGINE'}</small><strong>{data.stack.length ? data.stack.join(' / ') : data.engine ?? '未填写'}</strong></div>
+        {date && <div><small>PROJECT DATE</small><strong>{date}</strong></div>}
+        {data.role && <div><small>PERSONAL CONTRIBUTION</small><strong>{data.role}</strong></div>}
+        <div><small>KEYWORDS</small><strong>{data.keywords.join(' / ')}</strong></div>
+        <div><small>STATUS</small><strong>{data.status}</strong></div>
+      </div>
+      {showDemo && <ProjectDemo project={project} />}
     </div></section>
-    <section class="case-reading wrap" id="chapters" aria-label="项目技术案例">
-      <nav class="chapter-nav" aria-label="案例章节"><p class="eyebrow">CASE INDEX</p><a href="#demo">视频演示</a>{chapters.map((heading, index) => <a href={`#${heading.slug}`}>{String(index + 1).padStart(2, '0')} / {heading.text}</a>)}{data.gallery.length > 0 && <a href="#gallery">项目画面</a>}<a href="#ownership">职责清单</a><a href="#project-navigation">项目导航</a></nav>
+    <section class:list={['case-reading', 'wrap', { 'case-reading--short': !showChapterNav }]} id="chapters" aria-label="项目介绍">
+      {showChapterNav && <nav class="chapter-nav" aria-label="案例章节" data-chapter-nav><p class="eyebrow">本页目录</p>{showDemo && <a href="#demo">视频演示</a>}{chapters.map((heading) => <a href={`#${heading.slug}`}>{heading.text}</a>)}{data.gallery.length > 0 && <a href="#gallery">项目画面</a>}{hasProjectDetails && <a href="#ownership">{hasContribution ? '职责清单' : '项目资源'}</a>}<a href="#project-navigation">项目导航</a></nav>}
       <article class="chapter-article">
         <div class="mdx-content"><slot /></div>
         {data.gallery.length > 0 && <section class="chapter" id="gallery"><small>PROJECT CAPTURES</small><h3>项目画面与关卡细节</h3><div class="case-gallery">{data.gallery.map((item) => <figure><a href={item.src} aria-label={`查看原图：${item.alt}`}><img src={item.src} alt={item.alt} loading="lazy" width="1280" height="720" /></a><figcaption>{item.caption}</figcaption></figure>)}</div></section>}
-        <section class="chapter" id="ownership"><small>PERSONAL CONTRIBUTION</small><h3>系统职责与集成边界</h3><p>个人负责范围：{data.personalScope.join('、')}。</p>{data.integratedSystems.length > 0 && <div class="scope"><strong>引擎机制与素材使用</strong><ul>{data.integratedSystems.map((system) => <li>{system}</li>)}</ul></div>}{data.sourceUrl && <p><a href={data.sourceUrl}>查看公开源码 ↗</a></p>}</section>
+        {hasProjectDetails && <section class="chapter" id="ownership">
+          <small>{hasContribution ? 'PERSONAL CONTRIBUTION' : 'PROJECT RESOURCES'}</small>
+          <h3>{hasContribution ? '个人贡献与项目依赖' : '项目资源'}</h3>
+          {data.personalScope.length > 0 && <p>个人负责范围：{data.personalScope.join('、')}。</p>}
+          {data.integratedSystems.length > 0 && <div class="scope"><strong>{data.category === 'games' ? '引擎机制与素材使用' : '相关系统与资源'}</strong><ul>{data.integratedSystems.map((system) => <li>{system}</li>)}</ul></div>}
+          {data.sourceUrl && <p><a href={data.sourceUrl}>查看公开源码 ↗</a></p>}
+        </section>}
       </article>
     </section>
     <section class="case-end" id="project-navigation">
       <div class="case-end-inner wrap">
-        <div class="case-end-summary"><p class="eyebrow">CASE STUDY / {number}</p><h2>项目案例 · {data.title}</h2><p>{data.role}</p></div>
+        <div class="case-end-summary"><p class="eyebrow">PROJECT {number}</p><h2>{data.title}</h2>{data.role && <p>{data.role}</p>}</div>
         <nav class="case-end-actions" aria-label="项目浏览">
-          <a class="case-index-button" href="/#screenings"><span><small>作品索引</small><strong>返回作品选集</strong></span><span class="next-arrow" aria-hidden="true">↖</span></a>
+          <a class="case-index-button" href={`/#${data.category}`}><span><small>作品索引</small><strong>返回所属分区</strong></span><span class="next-arrow" aria-hidden="true">↖</span></a>
           {previousProject && <NextProject project={previousProject} direction="previous" end />}
           {nextProject && <NextProject project={nextProject} end />}
         </nav>
@@ -44,3 +74,24 @@ const media = getProjectMedia(project);
     </section>
   </main>
 </BaseLayout>
+
+<style>
+  .case-read-link { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; margin-top: 6px; color: var(--ice); font-size: 13px; font-weight: 600; }
+  .case-read-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+</style>
+
+<script>
+  import { trackAnchorNavigation } from '../scripts/anchor-navigation';
+
+  const bar = document.querySelector<HTMLElement>('[data-reading-progress]');
+  const main = bar?.closest('main');
+  if (bar && main) {
+    bar.hidden = false;
+    trackAnchorNavigation(document.querySelector('[data-chapter-nav]'), () => {
+      const bounds = main.getBoundingClientRect();
+      const length = Math.max(1, bounds.height - window.innerHeight);
+      const progress = Math.min(1, Math.max(0, -bounds.top / length));
+      bar.style.transform = `scaleX(${progress})`;
+    });
+  }
+</script>

@@ -1,0 +1,185 @@
+---
+import { projectSections, type ProjectCategory } from '../config/project-sections';
+
+interface Props { counts: Record<ProjectCategory, number>; }
+const { counts } = Astro.props;
+---
+<section class="archive-index" aria-labelledby="archive-index-title">
+  <div class="index-header">
+    <h2 id="archive-index-title">作品索引</h2>
+    <span>{projectSections.length} 个分区</span>
+  </div>
+  <fieldset class="index-options">
+    <legend class="index-legend">选择作品分区</legend>
+    <div class="index-map" aria-hidden="true">
+      <div class="index-orbits"><i></i><i></i><i></i></div>
+      <img src="/visuals/ice-mark.svg" alt="" width="32" height="32" />
+    </div>
+    {projectSections.map((section, index) => (
+      <div class="index-choice" data-index-section={section.id}>
+        <input class="index-input" type="radio" name="archive-section" id={`index-choice-${section.id}`} checked={index === 0} />
+        <label class="index-node" for={`index-choice-${section.id}`}>
+          <span class="index-pin" aria-hidden="true"></span>{section.title}
+        </label>
+        <div class="index-detail">
+          <div class="index-summary">
+            <div><strong>{section.title}</strong><span>{counts[section.id] > 0 ? `${counts[section.id]} 项收录` : '整理中'}</span></div>
+            <p>{section.intro}</p>
+          </div>
+          <a href={`#${section.id}`} aria-label={`浏览${section.title}分区`}>浏览分区 <span aria-hidden="true">↘</span></a>
+        </div>
+      </div>
+    ))}
+  </fieldset>
+</section>
+
+<style>
+  .archive-index {
+    min-width: 0;
+    overflow: hidden;
+    color: #f0f6ff;
+    border: 1px solid #354964;
+    border-radius: 18px;
+    background: #142236;
+    box-shadow: 0 30px 60px -35px #101c36a3, 0 11px 22px -15px #101c3654;
+  }
+
+  .index-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 60px;
+    padding: 12px 24px;
+    border-bottom: 1px solid #bacdea22;
+  }
+
+  .index-header h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: .04em; }
+  .index-header > span { color: #b1c5de; font: 12px var(--mono); }
+
+  .index-options {
+    --map-height: clamp(265px, 24vw, 350px);
+    position: relative;
+    min-width: 0;
+    margin: 0;
+    padding: var(--map-height) 0 0;
+    border: 0;
+  }
+
+  .index-legend, .index-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    clip-path: inset(50%);
+    overflow: hidden;
+  }
+
+  .index-map {
+    position: absolute;
+    inset: 0 0 auto;
+    height: var(--map-height);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background:
+      linear-gradient(#c6d8fb0b 1px, transparent 1px) center / 24px 24px,
+      linear-gradient(90deg, #c6d8fb0b 1px, transparent 1px) center / 24px 24px,
+      linear-gradient(90deg, transparent calc(50% - .5px), #abc6f139 50%, transparent calc(50% + .5px)),
+      linear-gradient(transparent calc(50% - .5px), #abc6f139 50%, transparent calc(50% + .5px)),
+      radial-gradient(ellipse at center, #2b4869 0%, #17283f 63%, #111e30 100%);
+  }
+
+  .index-orbits {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 92%;
+    height: 78%;
+    transform: translate(-50%, -50%) rotate(-14deg);
+  }
+
+  .index-orbits i { position: absolute; inset: 0; border: 1px solid #acc8eb38; border-radius: 50%; }
+  .index-orbits i:nth-child(2) { inset: 13%; border-style: dashed; }
+  .index-orbits i:nth-child(3) { inset: 27%; border-color: #acc8eb5c; }
+  .index-map img { position: relative; width: 33px; height: 33px; filter: brightness(0) invert(1); opacity: .82; }
+
+  .index-choice { --node-color: #a6c9ff; }
+  .index-choice[data-index-section="games"] { --x: 24%; --y: .27; }
+  .index-choice[data-index-section="graphics"] { --x: 73%; --y: .23; --node-color: #a9e8ed; }
+  .index-choice[data-index-section="frontend"] { --x: 78%; --y: .56; --node-color: #ccd0ff; }
+  .index-choice[data-index-section="backend"] { --x: 63%; --y: .81; --node-color: #a7e2cb; }
+  .index-choice[data-index-section="misc"] { --x: 23%; --y: .70; --node-color: #f2d0a8; }
+
+  .index-input, .index-node { top: calc(var(--map-height) * var(--y)); left: var(--x); }
+  .index-node {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 7px 13px;
+    transform: translate(-50%, -50%);
+    border: 1px solid #90acce57;
+    border-radius: 999px;
+    background: #192c45;
+    color: #d4e1f3;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: background .2s, border-color .2s, box-shadow .25s, color .2s;
+  }
+
+  .index-pin { width: 6px; height: 6px; border-radius: 50%; background: var(--node-color); }
+  .index-node:hover, .index-input:focus-visible + .index-node { border-color: var(--node-color); background: #263e5a; color: white; }
+  .index-input:focus-visible + .index-node { outline: 2px solid #fff; outline-offset: 4px; }
+  .index-input:checked + .index-node {
+    color: #142236;
+    background: var(--node-color);
+    border-color: var(--node-color);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--node-color) 14%, transparent), 0 0 38px #8fbfff42;
+  }
+  .index-input:checked + .index-node .index-pin { background: #284565; }
+
+  .index-detail {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 20px;
+    min-height: 108px;
+    padding: 17px 24px;
+    border-top: 1px solid #bacdea27;
+    background: #17263a;
+  }
+
+  .index-input:checked ~ .index-detail { display: flex; }
+  .index-summary > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .index-summary strong { font-size: 17px; font-weight: 600; }
+  .index-summary span { color: var(--node-color); font-size: 11px; }
+  .index-summary p { color: #bbcde2; font-size: 13px; line-height: 1.65; margin: 7px 0 0; }
+  .index-detail a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    flex: none;
+    min-height: 44px;
+    padding-inline: 12px;
+    border: 1px solid #7890af66;
+    border-radius: 7px;
+    font-size: 12px;
+    transition: background .2s, border-color .2s;
+  }
+  .index-detail a span { font-size: 17px; line-height: 1; }
+  .index-detail a:hover { border-color: var(--node-color); background: #273d58; }
+  .index-detail a:focus-visible { outline-color: #fff; outline-offset: 3px; }
+
+  @media (max-width: 700px) {
+    .index-options { --map-height: clamp(208px, 56vw, 270px); }
+    .index-header { min-height: 52px; padding-inline: 15px; }
+    .index-node { font-size: 12px; padding-inline: 10px; }
+    .index-detail { min-height: 98px; padding: 13px 15px; gap: 10px; }
+    .index-summary strong { font-size: 15px; }
+    .index-summary p { font-size: 12px; }
+    .index-detail a { padding-inline: 9px; gap: 5px; }
+  }
+</style>

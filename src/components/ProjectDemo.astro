@@ -6,7 +6,7 @@ const { project } = Astro.props;
 const media = getProjectMedia(project);
 ---
 <section class="case-demo" id="demo" aria-labelledby="demo-title">
-  <div class="demo-heading"><div><p class="eyebrow">GAMEPLAY / VIDEO</p><h2 id="demo-title">视频演示<span class="accent">。</span></h2></div><span class="demo-status">{media.sources.length ? '实机演示' : '即将上线'}</span></div>
+  <div class="demo-heading"><div><p class="eyebrow">{project.data.category === 'games' ? 'GAMEPLAY / VIDEO' : 'PROJECT / VIDEO'}</p><h2 id="demo-title">视频演示<span class="accent">。</span></h2></div><span class="demo-status">{media.sources.length ? '实机演示' : '即将上线'}</span></div>
   {media.sources.length ? <div class="demo-video" data-video-player tabindex="0" role="group" aria-label={`${project.data.title} 视频播放器`} aria-describedby="demo-shortcuts">
   <div class="demo-screen" data-video-surface>
   <video class="demo-player" controls playsinline preload="metadata" poster={media.cover} aria-label={`${project.data.title} 实机演示`}>
@@ -55,8 +55,8 @@ const media = getProjectMedia(project);
   <p class="demo-sr-only" id="demo-shortcuts">点击画面播放或暂停，左右滑动调整进度。空格播放或暂停，左右方向键跳转，左右方括号调整倍速。</p>
   </div> : <div class="demo-placeholder" role="note" aria-label={`${project.data.title} 视频演示预留位置`}>
     <span class="demo-placeholder-mark" aria-hidden="true">↗</span>
-    <p class="eyebrow">{project.data.posterCode} / GAMEPLAY PREVIEW</p>
-    <strong>把玩法留给画面。</strong><p>实机演示即将上线。</p>
+    <p class="eyebrow">{project.data.posterCode} / {project.data.category === 'games' ? 'GAMEPLAY PREVIEW' : 'PROJECT PREVIEW'}</p>
+    <strong>{project.data.category === 'games' ? '把玩法留给画面。' : '将创作呈现在画面中。'}</strong><p>演示资料正在整理。</p>
   </div>}
   {project.data.demoHighlights.length > 0 && <ul class="demo-highlights" aria-label="演示重点">{project.data.demoHighlights.map((item) => <li>{item}</li>)}</ul>}
 </section>

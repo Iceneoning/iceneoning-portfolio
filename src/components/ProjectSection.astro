@@ -1,0 +1,54 @@
+---
+import type { Project } from '../lib/projects';
+import { projectDate, projectHref } from '../lib/projects';
+import { getProjectMedia } from '../lib/project-media';
+import type { ProjectCategory } from '../config/project-sections';
+
+interface Props {
+  section: { id: ProjectCategory; title: string; english: string; intro: string };
+  projects: Project[];
+  externalLink?: { href: string; title: string; description: string };
+}
+const { section, projects, externalLink } = Astro.props;
+const cards = projects.map((project) => ({
+  href: projectHref(project),
+  title: project.data.title,
+  description: project.data.cardCaption,
+  stack: project.data.stack.join(' / ') || project.data.engine || project.data.genre,
+  status: projectDate(project) ?? project.data.status,
+  media: getProjectMedia(project),
+  external: false,
+}));
+const entries = externalLink
+  ? [...cards, { ...externalLink, stack: '个人博客', status: '外部网站', media: undefined, external: true }]
+  : cards;
+---
+<section class="archive-section" id={section.id} aria-labelledby={`title-${section.id}`}>
+  <div class="wrap">
+    <div class="archive-heading">
+      <div>
+        <h2 id={`title-${section.id}`}>{section.title}</h2>
+        <p class="archive-intro">{section.intro}</p>
+      </div>
+      {entries.length > 0 && <span class="archive-total">{entries.length} 项收录</span>}
+    </div>
+    {entries.length > 0 ?
+      <div class="archive-grid">
+        {entries.map(({ href, title, description, stack, status, media, external }) => (
+          <a class="archive-card" href={href} aria-label={external ? `访问${title}（外部网站）` : `查看作品：${title}`}>
+            {media?.cover && <div class="archive-card-cover">
+              <img src={media.cover} alt={media.coverAlt} loading="lazy" width="1280" height="720" />
+            </div>}
+            <div class="archive-card-meta">
+              <span>{stack || section.english}</span>
+              <span>{status}</span>
+            </div>
+            <h3>{title}</h3>
+            <p>{description}</p>
+            <span class="archive-card-link" aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </div> :
+      <p class="archive-empty">作品整理中</p>}
+  </div>
+</section>

@@ -2,8 +2,8 @@
 import '../styles/winter.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-interface Props { title: string; description: string; home?: boolean; edition?: string; }
-const { title, description, home = false, edition } = Astro.props;
+interface Props { title: string; description: string; home?: boolean; }
+const { title, description, home = false } = Astro.props;
 ---
 <!doctype html>
 <html lang="zh-CN">
@@ -12,7 +12,7 @@ const { title, description, home = false, edition } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#f8f7f3" />
+    <meta name="theme-color" content="#f8f9fc" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -35,7 +35,7 @@ const { title, description, home = false, edition } = Astro.props;
   </head>
   <body>
     <a href="#main" class="skip">跳到主要内容</a>
-    <Header home={home} edition={edition} />
+    <Header home={home} />
     <slot />
     <Footer home={home} />
   </body>

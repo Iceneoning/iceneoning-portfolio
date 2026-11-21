@@ -1,0 +1,13 @@
+---
+import { projectSections } from '../config/project-sections';
+---
+<nav class="section-shortcuts" aria-label="作品分区直达" data-section-shortcuts>
+  <div class="section-shortcuts-inner wrap">
+    {projectSections.map((section) => <a href={`#${section.id}`}>{section.title}</a>)}
+  </div>
+</nav>
+<script>
+  import { trackAnchorNavigation } from '../scripts/anchor-navigation';
+
+  trackAnchorNavigation(document.querySelector('[data-section-shortcuts]'));
+</script>

@@ -1,33 +1,47 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
+import SectionShortcuts from '../components/SectionShortcuts.astro';
+import ProjectSection from '../components/ProjectSection.astro';
 import ProjectShowcase from '../components/ProjectShowcase.astro';
-import { getPublishedProjects } from '../lib/projects';
-import { featuredProjectIds } from '../config/featured-projects';
+import { getPublishedProjects, type Project } from '../lib/projects';
+import { projectSections, type ProjectCategory } from '../config/project-sections';
 
 const projects = await getPublishedProjects();
-const publishedById = new Map(projects.map((project) => [project.id, project]));
-// This list controls the small hero navigation only. Showcase remains fully automatic.
-const featuredProjects = featuredProjectIds.map((id) => {
-  const project = publishedById.get(id);
-  if (!project) throw new Error(`代表作品 ${id} 不存在或尚未公开，请检查 featured-projects.ts`);
-  return project;
-});
+const blog = {
+  href: 'https://iceneoning-blog.pages.dev/',
+  title: '冰霓的博客',
+  description: '记录游戏开发实践、技术实验与个人创作。',
+};
+const sections = Object.fromEntries(
+  projectSections.map(({ id }) => [id, projects.filter((project) => project.data.category === id)]),
+) as Record<ProjectCategory, Project[]>;
+const counts = Object.fromEntries(
+  projectSections.map(({ id }) => [id, sections[id].length + (id === 'frontend' ? 1 : 0)]),
+) as Record<ProjectCategory, number>;
 ---
-<BaseLayout title="ICE · 让规则凝成世界" description="ICE：Unreal Engine Gameplay 与 C++ 游戏开发作品集。" home>
+<BaseLayout title="ICE：CREATIVE ARCHIVE" description="冰霓的个人作品集，收录游戏开发、图形学与渲染、前端开发和后端工程实践。" home>
   <main id="main" tabindex="-1">
-    <Hero projects={featuredProjects} />
-    <ProjectShowcase projects={projects} />
+    <SectionShortcuts />
+    <Hero counts={counts} blogHref={blog.href} />
+    <ProjectShowcase projects={sections.games} />
+    {projectSections.slice(1).map((section) => (
+      <ProjectSection
+        section={section}
+        projects={sections[section.id]}
+        externalLink={section.id === 'frontend' ? blog : undefined}
+      />
+    ))}
     <section class="about wrap" id="about" aria-label="关于这个作品集">
       <div>
-        <p class="eyebrow">ABOUT / ENGINEERING FOCUS</p>
-        <h2>Gameplay 系统设计<br />与客户端工程实践。</h2>
+        <p class="eyebrow">ABOUT / CREATIVE ARCHIVE</p>
+        <h2>从代码到世界，<br />记录每一次创造。</h2>
       </div>
       <div>
-        <p>聚焦 Unreal Engine 客户端开发与 C++ 系统实现。通过项目案例呈现负责模块、核心设计、技术取舍与实际验证情况。</p>
-        <a class="about-demo-link" href="https://pan.quark.cn/s/a831fd3701c4" target="_blank" rel="noopener noreferrer" aria-label="前往夸克网盘下载 Demo（在新标签页打开）">
+        <p>这里收录我的游戏开发、图形学与渲染、前端和后端工程实践。项目案例记录我参与的工作、关键实现和可查看的成果。</p>
+        <a class="about-demo-link" href="https://pan.quark.cn/s/a831fd3701c4" target="_blank" rel="noopener noreferrer" aria-label="前往夸克网盘下载游戏 Demo（在新标签页打开）">
           <span>
-            <strong class="about-demo-label">前往下载 Demo</strong>
+            <strong class="about-demo-label">前往下载游戏 Demo</strong>
             <span class="about-demo-source">夸克网盘 · 外部链接</span>
           </span>
           <span class="about-demo-arrow" aria-hidden="true">↗</span>

@@ -1,0 +1,54 @@
+---
+title: WebGAL × TuanChat · 团剧演出动效
+titleLines: [WebGAL × TuanChat, 团剧演出动效]
+posterCode: WEBGAL EFFECTS
+posterTitle: WebGAL × TuanChat
+cardCaption: 在 WebGAL 中实现立绘动画和表情特效，再将效果移植到 TuanChat 的团剧回放。
+keywords: [关键帧动画, PixiJS, 团剧回放]
+subtitle: 将 WebGAL 的角色动画与表情特效接入 TuanChat 回放
+order: 7
+category: frontend
+stack: [TypeScript, PixiJS, WebGAL]
+month: '2026-01'
+genre: 互动叙事与前端动效
+role: 动效实现与回放接入
+status: 已完成
+summary: 我先在 WebGAL 中制作角色入场、跳跃和抖动等关键帧动画，用 PixiJS 实现表情气泡，再把这些效果移植到 TuanChat。团剧共创的成片使用了其中的角色入场动画与部分表情效果。
+personalScope:
+  - 编写关键帧动画与动画注册表条目
+  - 实现 PixiJS 表情与双图层气泡
+  - 将 WebGAL 动效移植到 TuanChat 的回放流程
+integratedSystems:
+  - WebGAL 提供场景脚本解析、立绘渲染和特效注册机制。
+  - TuanChat 提供跑团消息转换与回放导出。
+---
+
+## 关键帧动画 [#keyframe-animation]
+
+立绘动画由 JSON 关键帧、`animationTable.json` 中注册的名字，以及场景指令中的目标组成。制作跳跃、受惊抖动和左右入场时，我分别维护每段动作的位置、缩放、旋转和透明度。注册后，同一份动画资源可以通过 `setAnimation` 绑定到左、中、右的不同立绘。
+
+成片里的「雷霆大旋转」就是一组两帧的资源。首帧在横向偏移 −3000 像素处以 `duration: 0` 定初态，终点回到目标位置，旋转累计 31.42 弧度，接近五圈，持续 2000 毫秒。位移与旋转由同一时间线驱动，到达目标位置时旋转也结束。
+
+## 分层表情与生命周期 [#expression-effects]
+
+气泡要保持底图样式一致，内部表情又要能单独替换。我用两个中心锚定的 Sprite 放到同一 PixiJS 容器中，各自设置缩放，由特效注册表将 `enBubbleShy` 等名字映射到创建函数。
+
+以害羞气泡为例，播放总时长 1.5 秒，最后 0.25 秒用剩余时间算出同一个透明度并同时赋给两层。自然播完时，特效移除自己的 ticker，结束逐帧更新。引擎停止演出时，通用停止回调回收容器和 ticker。
+
+## 接入 TuanChat 回放 [#tuanchat-replay]
+
+TuanChat 将消息转换为 WebGAL 场景指令。渲染器先让当前立绘出现在消息指定的位置，再把位置映射到 `fig-left`、`fig-center` 或 `fig-right`。入场和退场配置交给 `setTransition`，一次性动作交给 `setAnimation`，独立的表情特效消息生成 `pixiPerform`。回放和实时演出都使用这一组指令，动画细节仍放在 WebGAL 的资源和特效注册表里。
+
+关键顺序是先创建或更新立绘，再向对应位置发送动画指令。这样同一份效果既能在 WebGAL 里直接排演，也可以随 TuanChat 消息里的角色位置播放。导出逻辑处理长消息拆段时，动画安排在首段，避免每段对话都重新触发入场。
+
+视频由我们的项目负责人演示，大家平时都叫他「星爷」。可以留意片中角色入场时的「雷霆大旋转」，那段立绘动画也是我做的。
+
+<iframe
+  class="case-video-embed"
+  src="https://player.bilibili.com/player.html?bvid=BV1TJZiBbESG&p=1&autoplay=0&danmaku=0"
+  title="团剧共创成片 · 哔哩哔哩"
+  loading="lazy"
+  allowFullScreen
+></iframe>
+
+[在 B 站观看原视频](https://www.bilibili.com/video/BV1TJZiBbESG/)

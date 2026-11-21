@@ -7,13 +7,13 @@ export async function getStaticPaths() {
   const projects = await getPublishedProjects();
   return projects.map((project, index) => ({
     params: { slug: project.id },
-    props: { project, previousProject: projects[index - 1], nextProject: projects[index + 1], total: projects.length },
+    props: { project, previousProject: projects[index - 1], nextProject: projects[index + 1] },
   }));
 }
-interface Props { project: Project; previousProject?: Project; nextProject?: Project; total: number; }
-const { project, previousProject, nextProject, total } = Astro.props;
+interface Props { project: Project; previousProject?: Project; nextProject?: Project; }
+const { project, previousProject, nextProject } = Astro.props;
 const { Content, headings } = await render(project);
 ---
-<ProjectLayout project={project} previousProject={previousProject} nextProject={nextProject} total={total} headings={headings}>
+<ProjectLayout project={project} previousProject={previousProject} nextProject={nextProject} headings={headings}>
   <Content />
 </ProjectLayout>

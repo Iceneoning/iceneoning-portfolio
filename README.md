@@ -1,6 +1,8 @@
 # ICE Portfolio
 
-Unreal Engine / C++ Gameplay Engineering 个人作品集。独立于 Fuwari 博客部署。
+**ICE / CREATIVE ARCHIVE — 冰霓 · 创作档案**。收录游戏、图形学与渲染、前端开发、后端开发及杂项创作，独立于 Fuwari 博客部署。
+
+**V0.4 首页（2026-10-21）**：增加四分区首屏直达按钮和吸顶导航；**游戏分区直接使用电影式放映厅**，图形学与渲染、后端开发、杂项依次纵向排列。所有展区均自动收录对应类别的公开作品，并保留旧项目详情链接。新增非游戏项目可使用 `stack` 代替 `engine`。项目接入方式见 [V0.4 内容结构与维护约定](docs/content/10-creative-archive.md)。下文 V8 / Winter Atelier 为之前版本的历史记录。
 
 2026-10-11 内容更新：Challenge / FPS 代表作已补充技术案例，BoardLine 已按当前 C++ 工程补充技术章节。三部作品的完整演示视频与 BoardLine 主视觉已经压缩并接入；媒体路径约定见 [作品媒体接入说明](docs/content/06-project-media-and-details.md)，压缩参数与原文件保存位置见 [媒体优化记录](docs/content/09-media-optimization.md)。
 
