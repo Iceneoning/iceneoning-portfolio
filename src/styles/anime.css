@@ -1,0 +1,213 @@
+/* ==========================================================================
+   Anime layer · 冰霓看板娘主题
+   Loaded after winter.css. Adds the pastel aurora palette, reveal motion,
+   chibi decorations, mascot widget and click / snow effects.
+   ========================================================================== */
+:root {
+  --sakura: #ff8fbf;
+  --lav: #a99bff;
+  --aqua: #7fd3ff;
+  --aurora: linear-gradient(120deg, #7fb2ff, #b9a8ff 52%, #ff9cc9);
+  --aurora-text: linear-gradient(100deg, #3f6fd8 0%, #8b6cf0 55%, #e2589b 100%);
+  --day: #f7f9fe;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 110% 20%, #eee9ff 0, transparent 60%),
+    radial-gradient(900px 500px at -10% 70%, #e4f2ff 0, transparent 60%),
+    var(--day);
+  background-attachment: fixed;
+}
+::selection { background: #ffd6e8; color: var(--ink) }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap }
+
+/* ---------- Typography accents ---------- */
+.kana-chip {
+  display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px;
+  background: var(--aurora); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  box-shadow: 0 6px 16px -8px #8b6cf0;
+}
+.kana-label { margin: 0 0 6px; color: #6b7d99; font: 600 11px/1.6 var(--sans); letter-spacing: .14em; text-transform: uppercase }
+.kana-label > span { color: color-mix(in srgb, var(--accent, #8b6cf0) 72%, #2c3f6b); letter-spacing: .2em }
+
+.main-link--glow { position: relative; overflow: hidden; background: linear-gradient(120deg, #1f3566, #34509a 60%, #6a5bc9); box-shadow: 0 14px 30px -16px #3b4f9a }
+.main-link--glow::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, #ffffff40 48%, transparent 66%); translate: -120% 0; transition: translate .7s var(--ease) }
+.main-link--glow:hover { background: linear-gradient(120deg, #2a4688, #4a62c0 60%, #8a6fe0) }
+.main-link--glow:hover::after { translate: 120% 0 }
+
+/* ---------- Scroll reveal (uses `translate` so it composes with tilt transforms) ---------- */
+.js-fx [data-reveal] { opacity: 0; translate: 0 26px; transition: opacity .7s var(--ease), translate .7s var(--ease); transition-delay: var(--delay, 0ms) }
+.js-fx [data-reveal].is-visible { opacity: 1; translate: 0 0 }
+.js-fx .archive-grid > [data-reveal]:nth-child(2n) { --delay: 90ms }
+.js-fx .archive-card[data-reveal] { transition: transform .35s var(--ease), border-color .25s, box-shadow .3s, opacity .7s var(--ease) var(--delay, 0ms), translate .7s var(--ease) var(--delay, 0ms) }
+
+/* ---------- Header & shortcuts ---------- */
+.site-header { background: #fbfcffd9; backdrop-filter: blur(12px) }
+.brand > span { background: var(--aurora-text); -webkit-background-clip: text; background-clip: text; color: transparent }
+.brand small { -webkit-text-fill-color: #5c6b83 }
+.brand-mark { transition: transform .6s var(--ease) }
+.brand:hover .brand-mark { transform: rotate(60deg) scale(1.1) }
+.site-header nav a { position: relative }
+.site-header nav a::after, .section-shortcuts a::after {
+  content: ""; position: absolute; left: 50%; right: 50%; bottom: 6px; height: 2px; border-radius: 2px;
+  background: var(--aurora); transition: left .3s var(--ease), right .3s var(--ease);
+}
+.site-header nav a:hover::after { left: 0; right: 0 }
+.section-shortcuts { background: #f7f9fee6 }
+.section-shortcuts a { position: relative; border-radius: 999px }
+.section-shortcuts a:hover, .section-shortcuts a[aria-current="location"] { background: #eceafd; color: #4b45b8 }
+.section-shortcuts a[aria-current="location"]::after { left: 14px; right: 14px; bottom: 3px }
+
+/* ---------- Section headings with chibi ---------- */
+.archive-heading-main { display: flex; align-items: center; gap: 18px; min-width: 0 }
+.archive-chibi {
+  flex: none; width: 96px; height: 96px; object-fit: contain;
+  filter: drop-shadow(0 8px 10px #2a3c6a2e);
+  animation: chibi-bob 4.2s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+.archive-heading-main:hover .archive-chibi { animation: chibi-wiggle .7s ease-in-out }
+@keyframes chibi-bob { 50% { transform: translateY(-6px) rotate(-2deg) } }
+@keyframes chibi-wiggle { 25% { transform: rotate(-8deg) } 50% { transform: rotate(6deg) } 75% { transform: rotate(-4deg) } }
+.gallery .section-head { align-items: center }
+.gallery .archive-intro { margin-top: 6px }
+
+.archive-section { position: relative; overflow: hidden; isolation: isolate }
+.archive-section::before {
+  content: ""; position: absolute; z-index: -1; width: 520px; height: 520px; right: -180px; top: -200px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent, #b9a8ff) 26%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.archive-section:nth-of-type(odd) { background: #f1f4fc8c }
+.archive-total { padding: 5px 12px; border-radius: 999px; background: #fff; border: 1px solid color-mix(in srgb, var(--accent, #b9a8ff) 55%, #fff) }
+
+/* ---------- Archive cards ---------- */
+.archive-card {
+  --rx: 0deg; --ry: 0deg; --mx: 0; --my: 0;
+  overflow: hidden; border-radius: 20px; border-color: #e0e6f3;
+  background: linear-gradient(165deg, #fff 55%, color-mix(in srgb, var(--accent, #b9a8ff) 12%, #fff));
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform .35s var(--ease), border-color .25s, box-shadow .3s, opacity .7s var(--ease), translate .7s var(--ease);
+}
+.archive-card:hover, .archive-card:focus-visible { border-color: color-mix(in srgb, var(--accent, #b9a8ff) 80%, #6c7fb0); box-shadow: 0 24px 40px -26px color-mix(in srgb, var(--accent, #8b6cf0) 85%, #1b2b55) }
+.archive-card-glare { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity .3s; background: radial-gradient(circle at calc(50% + var(--mx) * 100%) calc(50% + var(--my) * 100%), #ffffff8c, transparent 45%); mix-blend-mode: soft-light }
+.archive-card:hover .archive-card-glare { opacity: 1 }
+.archive-card-cover { border-radius: 12px }
+.archive-card-link { background: #fff }
+.archive-card:hover .archive-card-link, .archive-card:focus-visible .archive-card-link { background: linear-gradient(135deg, #5b7fe0, #9b7cf0); border-color: transparent }
+.archive-empty { border-radius: 14px; background: #ffffffa6 }
+
+/* ---------- Game showcase ---------- */
+.gallery { position: relative; background: linear-gradient(180deg, #f8f9fe, #f1f2fd) }
+.showcase-arrow { border-color: #c9d1ef; background: #fff }
+.showcase-arrow:hover:not(:disabled), .showcase-arrow:focus-visible { background: linear-gradient(135deg, #3f63c8, #8b6cf0); border-color: transparent }
+.showcase-slide .project-visual { border-radius: 18px }
+.showcase-slide[data-position="active"] .project-visual { border: 2px solid transparent; background: linear-gradient(#e4edf5, #e4edf5) padding-box, var(--aurora) border-box; box-shadow: 0 26px 50px -24px #5b4fb0aa, 0 0 0 6px #ffffff }
+.showcase-footer { gap: 18px }
+.showcase-dots { display: flex; align-items: center; gap: 4px; flex: none }
+.showcase-dot { display: grid; place-items: center; width: 26px; height: 32px; padding: 0; border: 0; background: none; cursor: pointer }
+.showcase-dot span { width: 8px; height: 8px; border-radius: 999px; background: #c5cfe4; transition: width .3s var(--ease), background .3s }
+.showcase-dot:hover span { background: #9bb0e0 }
+.showcase-dot[aria-current="true"] span { width: 22px; background: var(--aurora) }
+.showcase-dot:focus-visible { outline-offset: 0 }
+.showcase-rule { background: linear-gradient(to right, #8b6cf0 0 var(--showcase-progress, 0%), var(--line) var(--showcase-progress, 0%) 100%) }
+.showcase-cta { border-radius: 999px; border-color: #c4ccec; background: #fff }
+.showcase-cta:hover, .showcase-cta:focus-visible { background: linear-gradient(120deg, #2a4688, #6a5bc9); border-color: transparent }
+
+/* ---------- About ---------- */
+.about-anime { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(32px, 5vw, 72px); align-items: center; padding-block: 76px 92px; border-top: 1px solid var(--line) }
+.about-art { --rx: 0deg; --ry: 0deg; --mx: 0; --my: 0; position: relative; margin: 0; transform: perspective(1100px) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .4s var(--ease) }
+.about-art-frame { position: relative; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 24px; border: 3px solid #fff; box-shadow: 0 30px 60px -30px #2c3f7aaa, 0 0 0 1px #d4dbf2 }
+.about-art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease) }
+.about-art:hover img { transform: scale(1.03) }
+.about-art figcaption { margin-top: 12px; font-size: 11px; color: #6b7d99 }
+.about-art::before { content: ""; position: absolute; inset: auto -18px -18px auto; width: 60%; height: 70%; z-index: -1; border-radius: 28px; background: var(--aurora); opacity: .35; filter: blur(2px) }
+.about-anime h2 { margin: 0; font: 400 clamp(29px, 2.8vw, 38px)/1.45 var(--serif); letter-spacing: -.02em }
+.about-anime h2 em { font-style: normal; background: var(--aurora-text); -webkit-background-clip: text; background-clip: text; color: transparent }
+.about-anime .about-text { margin: 18px 0 0; font-size: 14px; line-height: 2; color: #566881 }
+.skill-cloud { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; padding: 0; list-style: none }
+.skill-cloud li { padding: 6px 12px; border: 1px solid #d9def2; border-radius: 999px; background: #fff; color: var(--ink-2); font-size: 12px; transition: border-color .2s, color .2s, translate .2s }
+.skill-cloud li:hover { border-color: var(--lav); color: #5a4bc0; translate: 0 -2px }
+.about-anime .about-demo-link { margin: 30px 0 0; border-radius: 16px; border: 0; background: linear-gradient(120deg, #1f3566, #3d55a8 60%, #7b62d6); box-shadow: 0 18px 34px -20px #3b4f9a }
+.about-anime .about-demo-link:hover { background: linear-gradient(120deg, #2a4688, #4f69c8 60%, #9a7ae6) }
+
+/* ---------- Footer ---------- */
+footer { position: relative; background: linear-gradient(180deg, #eef1fa, #e9ebf8) }
+footer::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--aurora); opacity: .7 }
+.footer-brand { background: var(--aurora-text); -webkit-background-clip: text; background-clip: text; color: transparent }
+.footer-brand span { -webkit-text-fill-color: #61728b }
+
+/* ---------- Case pages ---------- */
+.case-hero { background: radial-gradient(ellipse at top right, #e6e3ff, transparent 62%), radial-gradient(ellipse at bottom left, #e3f1ff, transparent 60%), #f4f6fd }
+.case-title-row h1 em { background: var(--aurora-text); -webkit-background-clip: text; background-clip: text; color: transparent }
+.reading-progress { background: var(--aurora) }
+.chapter-nav { border-radius: 16px; box-shadow: 0 14px 30px -26px #2c3f7a }
+.chapter-nav a:hover, .chapter-nav a[aria-current="location"] { background: #efedff; color: #4b45b8 }
+.chapter-nav a[aria-current="location"] { box-shadow: inset 3px 0 #8b6cf0 }
+.case-capture img { border-radius: 16px }
+.next-feature { background: linear-gradient(120deg, #1f3566, #4a5fb8); border-color: transparent }
+
+/* ---------- 404 ---------- */
+.not-found-anime { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: clamp(20px, 5vw, 64px) }
+.not-found-anime img { width: clamp(180px, 26vw, 300px); height: auto; filter: drop-shadow(0 16px 20px #2a3c6a33); animation: chibi-bob 3.6s ease-in-out infinite }
+.not-found h1 { background: var(--aurora-text); -webkit-background-clip: text; background-clip: text; color: transparent }
+
+/* ---------- Mascot widget ---------- */
+.mascot { position: fixed; right: 16px; bottom: 12px; z-index: 40; display: flex; align-items: flex-end; gap: 6px; pointer-events: none }
+.mascot[hidden] { display: none }
+.mascot > * { pointer-events: auto }
+.mascot-body { position: relative; width: 132px; height: 132px; padding: 0; border: 0; background: none; cursor: pointer; animation: chibi-bob 4.6s ease-in-out infinite; transform-origin: 50% 95% }
+.mascot-body img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 12px #1d2b5040); -webkit-user-drag: none; user-select: none }
+.mascot-body:focus-visible { outline-offset: -6px; border-radius: 50% }
+.mascot-body.is-hop { animation: mascot-hop .55s var(--ease) }
+@keyframes mascot-hop { 30% { transform: translateY(-18px) rotate(-6deg) scale(1.04) } 60% { transform: translateY(0) rotate(4deg) } 100% { transform: none } }
+.mascot-tools { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; opacity: .25; translate: 8px 0; transition: opacity .25s, translate .25s }
+.mascot:hover .mascot-tools, .mascot:focus-within .mascot-tools { opacity: 1; translate: 0 0 }
+.mascot-tool { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid #d5dcf2; border-radius: 50%; background: #ffffffe6; color: var(--ink); font: 15px/1 var(--sans); cursor: pointer; box-shadow: 0 6px 14px -8px #2c3f7a88; backdrop-filter: blur(8px); transition: background .2s, color .2s, border-color .2s }
+.mascot-tool:hover, .mascot-tool:focus-visible { background: linear-gradient(135deg, #5b7fe0, #9b7cf0); border-color: transparent; color: #fff }
+.mascot-tool[aria-pressed="false"] { color: #9aa6bd; text-decoration: line-through }
+.mascot-tool:focus-visible { outline-offset: 2px }
+.mascot-bubble {
+  position: absolute; right: 18px; bottom: calc(100% - 6px); width: max-content; max-width: min(250px, calc(100vw - 40px)); margin: 0;
+  padding: 11px 14px; border: 2px solid #cbd4fb; border-radius: 16px 16px 4px 16px; background: #fff;
+  color: var(--ink); font: 500 12.5px/1.65 var(--sans); box-shadow: 0 16px 30px -18px #2c3f7a99;
+}
+.mascot-bubble::after { content: ""; position: absolute; right: 30px; bottom: -8px; width: 12px; height: 12px; background: #fff; border-right: 2px solid #cbd4fb; border-bottom: 2px solid #cbd4fb; transform: rotate(45deg) }
+.mascot-bubble.is-pop, .ahero-bubble.is-pop { animation: bubble-in .4s var(--ease) }
+@keyframes bubble-in { 0% { opacity: 0; transform: translateY(6px) scale(.92) } 100% { opacity: 1; transform: none } }
+.mascot-summon { position: fixed; right: 0; bottom: 22px; z-index: 40; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 14px 8px 12px; border: 0; border-radius: 999px 0 0 999px; background: linear-gradient(120deg, #5b7fe0, #9b7cf0); color: #fff; font: 600 12px var(--sans); cursor: pointer; box-shadow: 0 10px 22px -12px #3b4f9a }
+.mascot-summon[hidden] { display: none }
+
+/* ---------- Snow & sparkles ---------- */
+.snow-layer { position: fixed; inset: 0; z-index: 35; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity .6s }
+.snow-layer.is-on { opacity: 1 }
+.snow-layer i { position: absolute; top: -12px; border-radius: 50%; background: radial-gradient(circle, #fff 0 35%, #b4cdff 70%, transparent 72%); box-shadow: 0 0 6px #b9d2ff; animation: snow-fall var(--dur) linear var(--delay) infinite; animation-play-state: paused }
+.snow-layer.is-on i { animation-play-state: running }
+@keyframes snow-fall { to { transform: translate3d(var(--drift), 105vh, 0) rotate(240deg) } }
+.fx-spark { position: fixed; z-index: 60; pointer-events: none; translate: -50% -50%; text-shadow: 0 0 6px currentColor; animation: spark-burst .7s cubic-bezier(.2, .7, .3, 1) forwards }
+@keyframes spark-burst { 0% { opacity: 1; transform: translate(0, 0) scale(.4) } 70% { opacity: 1 } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(1) rotate(90deg) } }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 820px) {
+  .about-anime { grid-template-columns: 1fr; gap: 34px; padding-block: 50px 64px }
+  .archive-chibi { width: 76px; height: 76px }
+}
+@media (max-width: 700px) {
+  .mascot { right: 6px; bottom: 6px }
+  .mascot-body { width: 86px; height: 86px }
+  .mascot-tools { opacity: .85; translate: 0 0; margin-bottom: 8px }
+  .mascot-tool { width: 30px; height: 30px; font-size: 13px }
+  .mascot-bubble { right: 8px; font-size: 12px; padding: 9px 12px }
+  .archive-heading-main { gap: 12px }
+  .archive-chibi { width: 64px; height: 64px }
+  .gallery .section-head { flex-wrap: wrap }
+  .showcase-dots { display: none }
+  .not-found-anime { grid-template-columns: 1fr }
+}
+@media (prefers-reduced-motion: reduce) {
+  .js-fx [data-reveal] { opacity: 1; translate: none }
+  .archive-card, .about-art { transform: none !important }
+  .snow-layer { display: none }
+  .fx-spark { display: none }
+}

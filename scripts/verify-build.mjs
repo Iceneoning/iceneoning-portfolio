@@ -56,7 +56,9 @@ for (const [file, html] of htmlByPath) {
   }
   check(`${route}: single H1`, (html.match(/<h1(?:\s|>)/g) || []).length === 1);
   const scriptCount = (html.match(/<script(?:\s|>)/g) || []).length;
-  const expectedScripts = route === '/' || html.includes('id="demo"') ? 3 : html.includes('data-reading-progress') ? 2 : 1;
+  // +1: the site-wide mascot / anime effects module rendered by BaseLayout.
+  const expectedScripts = (route === '/' || html.includes('id="demo"') ? 3 : html.includes('data-reading-progress') ? 2 : 1) + 1;
+  check(`${route}: mascot widget`, html.includes('data-mascot') && html.includes('data-snow'));
   check(`${route}: expected client scripts`, scriptCount === expectedScripts, String(scriptCount));
   check(`${route}: no decorative canvas`, !/<canvas/.test(html));
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
@@ -78,8 +80,8 @@ for (const [file, html] of htmlByPath) {
       ? !/<button[^>]*data-showcase-prev[^>]*disabled[^>]*>/.test(html) && !/<button[^>]*data-showcase-next[^>]*disabled[^>]*>/.test(html)
       : /<button[^>]*data-showcase-prev[^>]*disabled[^>]*>/.test(html) && /<button[^>]*data-showcase-next[^>]*disabled[^>]*>/.test(html));
     check('Homepage: creative archive copy', html.includes('记录一直以来的项目、实践与持续探索。'));
-    check('Homepage: archive index has one radio per category', (html.match(/name="archive-section"/g) || []).length === categories.length && categories.every((id) => html.includes(`id="index-choice-${id}"`) && html.includes(`for="index-choice-${id}"`)));
-    check('Homepage: archive index replaces the illustrated hero', html.includes('id="archive-index-title"') && !/atelier-image|winter-workshop/.test(html));
+    check('Homepage: section cards link to every category', categories.every((id) => html.includes(`class="section-card" href="#${id}"`)) && html.includes('id="section-cards-title"'));
+    check('Homepage: anime hero with credited original artwork', html.includes('data-hero-art') && html.includes('AI 绘制') && !/atelier-image|winter-workshop/.test(html));
     check('Homepage: progressive placeholders match preview count', (html.match(/data-progressive="true"/g) || []).length === (html.match(/--art-preview:/g) || []).length);
     check('Homepage: project images use a defined media strategy', (html.match(/fetchpriority="low"/g) || []).length + (html.match(/class="project-cover"/g) || []).length + (html.match(/class="project-cover-pending"/g) || []).length === gameSlugs.length);
   }

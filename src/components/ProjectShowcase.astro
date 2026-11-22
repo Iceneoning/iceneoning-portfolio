@@ -1,6 +1,8 @@
 ---
+import { Image } from 'astro:assets';
 import ProjectPoster from './ProjectPoster.astro';
 import { projectHref, type Project } from '../lib/projects';
+import { sectionChibi } from '../lib/anime-art';
 
 interface Props { projects: Project[]; }
 const { projects } = Astro.props;
@@ -10,7 +12,10 @@ const firstProject = projects[0];
   <div class="showcase-stage" data-showcase-stage>
     <div class="wrap">
       <div class="section-head">
-        <div class="game-gallery-heading"><h2 id="games-title">游戏放映厅</h2><p class="archive-intro">玩法、交互与游戏系统的设计和实现。</p></div>
+        <div class="game-gallery-heading archive-heading-main" data-reveal>
+          <Image src={sectionChibi.games} alt="" widths={[160, 280]} sizes="96px" format="webp" quality={82} class="archive-chibi" loading="lazy" />
+          <div><p class="kana-label"><span>ゲーム</span> · GAMES &amp; INTERACTIVE</p><h2 id="games-title">游戏放映厅</h2><p class="archive-intro">玩法、交互与游戏系统的设计和实现。拖拽、滚轮或方向键都可以换片哦。</p></div>
+        </div>
         {projects.length > 0 && <div class="showcase-toolbar">
           <span class="showcase-count" aria-live="polite" aria-atomic="true"><span data-showcase-current>01</span><span class="showcase-count-divider"> / </span>{String(projects.length).padStart(2, '0')}</span>
           <div class="showcase-controls" aria-label="作品切换">
@@ -34,6 +39,9 @@ const firstProject = projects[0];
           </div>
         </div>
         <div class="showcase-footer">
+          <div class="showcase-dots" aria-label="选择作品">
+            {projects.map((project, index) => <button class="showcase-dot" type="button" data-showcase-dot={index} aria-label={`切换到第 ${index + 1} 部：${project.data.title}`} aria-current={index === 0 ? 'true' : undefined}><span aria-hidden="true"></span></button>)}
+          </div>
           <span class="showcase-rule" data-showcase-progress aria-hidden="true"></span>
           <a class="showcase-cta" href={projectHref(firstProject)} data-showcase-cta aria-label={`查看 ${firstProject.data.title} 项目案例`}>查看当前项目 <span aria-hidden="true">↗</span></a>
         </div>
@@ -55,6 +63,8 @@ const firstProject = projects[0];
     const current = gallery.querySelector<HTMLElement>('[data-showcase-current]');
     const cta = gallery.querySelector<HTMLAnchorElement>('[data-showcase-cta]');
     const progressLine = gallery.querySelector<HTMLElement>('[data-showcase-progress]');
+    const dots = Array.from(gallery.querySelectorAll<HTMLButtonElement>('[data-showcase-dot]'));
+    dots.forEach((dot) => dot.addEventListener('click', () => render(Number(dot.dataset.showcaseDot))));
     const wrap = (index: number) => (index % count + count) % count;
 
     // With two projects, previous and next point to the same project.
@@ -104,6 +114,10 @@ const firstProject = projects[0];
       if (previous) previous.disabled = count <= 1;
       if (next) next.disabled = count <= 1;
       progressLine?.style.setProperty('--showcase-progress', Math.round((activeIndex + 1) / count * 100) + '%');
+      dots.forEach((dot, i) => {
+        if (i === activeIndex) dot.setAttribute('aria-current', 'true');
+        else dot.removeAttribute('aria-current');
+      });
       if (cta) {
         cta.href = slides[activeIndex]?.dataset.href ?? '#games';
         cta.setAttribute('aria-label', '查看 ' + (slides[activeIndex]?.dataset.title ?? '当前') + ' 项目案例');

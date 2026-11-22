@@ -1,11 +1,13 @@
 ---
+import { Image } from 'astro:assets';
 import type { Project } from '../lib/projects';
 import { projectDate, projectHref } from '../lib/projects';
 import { getProjectMedia } from '../lib/project-media';
+import { sectionChibi } from '../lib/anime-art';
 import type { ProjectCategory } from '../config/project-sections';
 
 interface Props {
-  section: { id: ProjectCategory; title: string; english: string; intro: string };
+  section: { id: ProjectCategory; title: string; english: string; kana: string; accent: string; intro: string };
   projects: Project[];
   externalLink?: { href: string; title: string; description: string };
 }
@@ -23,19 +25,24 @@ const entries = externalLink
   ? [...cards, { ...externalLink, stack: '个人博客', status: '外部网站', media: undefined, external: true }]
   : cards;
 ---
-<section class="archive-section" id={section.id} aria-labelledby={`title-${section.id}`}>
+<section class="archive-section" id={section.id} aria-labelledby={`title-${section.id}`} style={`--accent:${section.accent}`}>
   <div class="wrap">
-    <div class="archive-heading">
-      <div>
-        <h2 id={`title-${section.id}`}>{section.title}</h2>
-        <p class="archive-intro">{section.intro}</p>
+    <div class="archive-heading" data-reveal>
+      <div class="archive-heading-main">
+        <Image src={sectionChibi[section.id]} alt="" widths={[160, 280]} sizes="96px" format="webp" quality={82} class="archive-chibi" loading="lazy" />
+        <div>
+          <p class="kana-label"><span>{section.kana}</span> · {section.english}</p>
+          <h2 id={`title-${section.id}`}>{section.title}</h2>
+          <p class="archive-intro">{section.intro}</p>
+        </div>
       </div>
       {entries.length > 0 && <span class="archive-total">{entries.length} 项收录</span>}
     </div>
     {entries.length > 0 ?
       <div class="archive-grid">
         {entries.map(({ href, title, description, stack, status, media, external }) => (
-          <a class="archive-card" href={href} aria-label={external ? `访问${title}（外部网站）` : `查看作品：${title}`}>
+          <a class="archive-card" href={href} data-reveal data-tilt data-tilt-max="4" data-mascot-say={external ? `这是我的博客「${title}」，里面有更多开发笔记哦！` : `「${title}」——${description}`} aria-label={external ? `访问${title}（外部网站）` : `查看作品：${title}`}>
+            <span class="archive-card-glare" aria-hidden="true"></span>
             {media?.cover && <div class="archive-card-cover">
               <img src={media.cover} alt={media.coverAlt} loading="lazy" width="1280" height="720" />
             </div>}
@@ -49,6 +56,6 @@ const entries = externalLink
           </a>
         ))}
       </div> :
-      <p class="archive-empty">作品整理中</p>}
+      <p class="archive-empty">作品整理中，敬请期待 (｡･ω･｡)</p>}
   </div>
 </section>

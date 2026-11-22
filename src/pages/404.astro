@@ -1,9 +1,17 @@
 ---
+import { getImage } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { animeArt } from '../lib/anime-art';
+const lost = await getImage({ src: animeArt.chibiLost, width: 600, format: 'webp', quality: 82 });
 ---
-<BaseLayout title="404 · ICE Portfolio" description="页面不存在，返回 ICE 游戏开发作品选集。">
+<BaseLayout title="404 · ICE Portfolio" description="页面不存在，返回 ICE 创作档案作品集。">
   <main class="not-found wrap" id="main" tabindex="-1">
-    <p class="eyebrow">ICE / LOST WORK</p><h1>404.</h1>
-    <p>这部作品似乎不在展厅里。</p><a class="main-link" href="/#games">← 返回作品选集</a>
+    <div class="not-found-anime">
+      <img src={lost.src} width="300" height="300" alt="Q 版冰霓拿着倒过来的地图，一脸困惑" />
+      <div>
+        <p class="eyebrow">ICE / LOST WORK · まいご</p><h1>404.</h1>
+        <p>这部作品似乎不在展厅里……冰霓也迷路了。</p><a class="main-link main-link--glow" href="/#games">← 返回作品选集</a>
+      </div>
+    </div>
   </main>
 </BaseLayout>

@@ -1,0 +1,90 @@
+---
+import { Image } from 'astro:assets';
+import { projectSections, type ProjectCategory } from '../config/project-sections';
+import { sectionChibi } from '../lib/anime-art';
+
+interface Props { counts: Record<ProjectCategory, number>; }
+const { counts } = Astro.props;
+---
+<section class="section-cards" id="sections" aria-labelledby="section-cards-title">
+  <div class="wrap">
+    <div class="section-cards-head" data-reveal>
+      <p class="kana-label"><span>えらんでね</span> · CHOOSE A ROOM</p>
+      <h2 id="section-cards-title">想先逛哪个展区？</h2>
+    </div>
+    <ul class="section-cards-grid">
+      {projectSections.map((section, index) => (
+        <li data-reveal style={`--accent:${section.accent};--delay:${index * 70}ms`}>
+          <a class="section-card" href={`#${section.id}`} data-tilt data-tilt-max="9" data-mascot-say={`「${section.title}」展区收录了 ${counts[section.id]} 项作品，${section.intro}`} aria-label={`浏览${section.title}分区，${counts[section.id] > 0 ? `${counts[section.id]} 项收录` : '整理中'}`}>
+            <span class="section-card-glow" aria-hidden="true"></span>
+            <Image src={sectionChibi[section.id]} alt="" widths={[160, 280]} sizes="140px" format="webp" quality={82} class="section-card-chibi" loading="lazy" />
+            <span class="section-card-kana" aria-hidden="true">{section.kana}</span>
+            <strong>{section.title}</strong>
+            <span class="section-card-count">{counts[section.id] > 0 ? `${String(counts[section.id]).padStart(2, '0')} 项收录` : '整理中'}</span>
+            <span class="section-card-arrow" aria-hidden="true">↘</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .section-cards { padding-block: 58px 66px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #f3f5fd, #f8f9fe); }
+  .section-cards-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+  .section-cards-head h2 { margin: 0; font: 400 clamp(30px, 3vw, 42px)/1.3 var(--serif); letter-spacing: -.03em; }
+  .section-cards-head .kana-label { order: 2; margin: 0; }
+  .section-cards-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .section-cards-grid > li { min-width: 0; transition-delay: var(--delay); }
+
+  .section-card {
+    --rx: 0deg; --ry: 0deg; --mx: 0; --my: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 238px;
+    padding: 18px 18px 20px;
+    overflow: hidden;
+    border: 1px solid #dfe5f2;
+    border-radius: 20px;
+    background: linear-gradient(170deg, #fff 40%, color-mix(in srgb, var(--accent) 16%, #fff));
+    box-shadow: 0 12px 26px -22px #24396b80;
+    transform: perspective(800px) rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform .35s var(--ease), box-shadow .3s, border-color .3s;
+  }
+  .section-card:hover, .section-card:focus-visible { border-color: var(--accent); box-shadow: 0 22px 40px -24px color-mix(in srgb, var(--accent) 80%, #1a2b55); }
+  .section-card-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at calc(50% + var(--mx) * 50%) calc(40% + var(--my) * 50%), color-mix(in srgb, var(--accent) 35%, transparent), transparent 55%); opacity: 0; transition: opacity .3s; }
+  .section-card:hover .section-card-glow { opacity: 1; }
+  .section-card-chibi {
+    position: absolute;
+    right: -6px;
+    bottom: -4px;
+    width: 128px;
+    height: 128px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 12px #2a3c6a33);
+    transition: transform .45s var(--ease);
+    pointer-events: none;
+  }
+  .section-card:hover .section-card-chibi { transform: translateY(-8px) rotate(-4deg) scale(1.06); }
+  .section-card-kana { position: relative; font-size: 11px; letter-spacing: .14em; color: color-mix(in srgb, var(--accent) 70%, #33466e); font-weight: 600; }
+  .section-card strong { position: relative; margin-top: 8px; font: 500 21px/1.35 var(--serif); color: var(--ink); }
+  .section-card-count { position: relative; margin-top: 6px; padding: 3px 9px; border-radius: 999px; background: #ffffffcc; border: 1px solid color-mix(in srgb, var(--accent) 50%, #fff); color: var(--ink-2); font-size: 11px; }
+  .section-card-arrow { position: absolute; left: 18px; bottom: 16px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 15px; transition: background .25s, transform .25s; }
+  .section-card:hover .section-card-arrow { background: color-mix(in srgb, var(--accent) 70%, #1f3466); transform: translate(2px, 2px); }
+
+  @media (max-width: 1100px) {
+    .section-cards-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 700px) {
+    .section-cards { padding-block: 40px 46px; }
+    .section-cards-head { flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 20px; }
+    .section-cards-head .kana-label { order: 0; }
+    .section-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .section-card { min-height: 190px; padding: 14px; border-radius: 16px; }
+    .section-card strong { font-size: 17px; }
+    .section-card-chibi { width: 96px; height: 96px; }
+    .section-card-arrow { left: 14px; bottom: 13px; width: 28px; height: 28px; }
+  }
+</style>
