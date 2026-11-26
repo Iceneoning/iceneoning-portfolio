@@ -91,7 +91,9 @@ for (const [file, html] of htmlByPath) {
   check(`${route}: no previous geometric artwork`, !html.includes('class="concept-art'));
   if (sources.length) {
     check(`${route}: optimized responsive illustration sources`, sources.every((source) => source.endsWith('.webp')));
-    if (route !== '/') check(`${route}: concept artwork caption`, html.includes('AI 概念插画') && html.includes('非项目实机'));
+  }
+  if (route !== '/' && /<img\b[^>]*\bclass="portfolio-artwork"/.test(html)) {
+    check(`${route}: concept artwork caption`, html.includes('AI 概念插画') && html.includes('非项目实机'));
   }
   const references = [...new Set([...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1]).concat(sources))];
   for (const reference of references) {

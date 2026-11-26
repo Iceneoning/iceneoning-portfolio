@@ -1,7 +1,7 @@
 import type { ImageMetadata } from 'astro';
 import type { ProjectCategory } from '../config/project-sections';
-// 首屏 / 关于区插画由站长提供（原图位于 public/picture/）。
-import hero from '../assets/anime/hero-snow.jpg';
+// 首屏 / 关于区插画由站长提供，原图保存在本地 media-source/anime/。
+import hero from '../assets/anime/hero-snow.webp';
 import about from '../assets/anime/about-mika.jpg';
 import chibi from '../assets/anime/chibi.png';
 import chibiGames from '../assets/anime/chibi-games.png';

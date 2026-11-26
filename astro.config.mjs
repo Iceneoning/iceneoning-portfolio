@@ -1,6 +1,5 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
-import tailwindcss from '@tailwindcss/vite';
 
 function remarkHeadingIds() {
   return (tree) => {
@@ -22,5 +21,4 @@ export default defineConfig({
   output: 'static',
   redirects: { '/projects/tuan-chat-replay/': '/projects/webgal-effects/' },
   integrations: [mdx({ remarkPlugins: [remarkHeadingIds] })],
-  vite: { plugins: [tailwindcss()] },
 });

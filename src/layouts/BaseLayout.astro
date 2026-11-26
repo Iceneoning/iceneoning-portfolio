@@ -24,8 +24,7 @@ const { title, description, home = false } = Astro.props;
       document.addEventListener('DOMContentLoaded', () => {
         for (const image of document.querySelectorAll('img[data-progressive]')) {
           const show = () => image.classList.add('image-ready');
-          if (image.decode) image.decode().then(show, show);
-          else if (image.complete) show();
+          if (image.complete) show();
           else {
             image.addEventListener('load', show, { once: true });
             image.addEventListener('error', show, { once: true });

@@ -16,7 +16,7 @@ const [firstSource] = sources;
   )}
   {firstSource ? <div class="demo-video" data-video-player tabindex="0" role="group" aria-label={`${project.data.title} 视频播放器`} aria-describedby="demo-shortcuts">
   <div class="demo-screen" data-video-surface>
-  <video class="demo-player" controls playsinline preload="metadata" aria-label={`${project.data.title} 实机演示`}>
+  <video class="demo-player" controls playsinline preload="metadata" aria-label={`${project.data.title} 演示视频`}>
     {sources.map((source) => <source src={source.src} type={source.type} />)}
     <p>当前浏览器无法播放此视频。<a href={firstSource.src}>下载演示视频</a></p>
   </video>

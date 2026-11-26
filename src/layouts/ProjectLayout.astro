@@ -33,7 +33,7 @@ const showChapterNav = chapters.length > 1 || hasProjectDetails || data.gallery.
         </div>
         <div class="case-intro">
           <p class="case-summary">{data.summary}</p>
-          {firstChapter && <a class="case-read-link" href={`#${firstChapter.slug}`}>阅读技术实现 <span aria-hidden="true">↓</span></a>}
+          {firstChapter && <a class="case-read-link" href={`#${firstChapter.slug}`}>{hasContribution ? '阅读技术实现' : '查看作品介绍'} <span aria-hidden="true">↓</span></a>}
         </div>
       </div>
       {data.status === '开发中' && <div class="case-development-note" role="note"><strong>正在开发，敬请期待</strong><span>项目仍在持续迭代，以下技术介绍为当前阶段的实现记录。</span></div>}

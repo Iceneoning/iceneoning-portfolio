@@ -1,10 +1,9 @@
 ---
-import { getImage } from 'astro:assets';
+import { Image } from 'astro:assets';
 import { animeArt } from '../lib/anime-art';
 
 interface Props { home?: boolean; }
 const { home = false } = Astro.props;
-const chibi = await getImage({ src: animeArt.chibi, width: 280, format: 'webp', quality: 82 });
 ---
 <div class="snow-layer" aria-hidden="true" data-snow></div>
 <aside class="mascot" aria-label="看板娘冰霓" data-mascot data-mascot-page={home ? 'home' : 'case'}>
@@ -15,7 +14,11 @@ const chibi = await getImage({ src: animeArt.chibi, width: 280, format: 'webp', 
     <button type="button" class="mascot-tool" data-mascot-hide title="收起看板娘"><span aria-hidden="true">×</span><span class="sr-only">收起看板娘</span></button>
   </div>
   <button type="button" class="mascot-body" data-mascot-poke aria-label="和冰霓说说话">
-    <img src={chibi.src} width="140" height="140" alt="" decoding="async" loading="lazy" />
+    <Image
+      src={animeArt.chibi} alt="" width={280} height={280}
+      widths={[96, 120, 180, 240, 280]} sizes="(max-width: 700px) 86px, 116px"
+      format="webp" quality={82} decoding="async" loading="lazy"
+    />
   </button>
 </aside>
 <button type="button" class="mascot-summon" data-mascot-show hidden><span aria-hidden="true">❄</span> 召唤冰霓</button>

@@ -2,7 +2,7 @@
 
 **ICE / CREATIVE ARCHIVE — 冰霓 · 创作档案**。收录游戏、图形学与渲染、前端开发、后端开发及杂项创作，独立于 Fuwari 博客部署。
 
-**V0.5 二次元主题（2026-11-21）**：新增看板娘「冰霓」（AI 绘制的 Q 版形象）。首页改为插画首屏（站长提供的插画，原图位于 `public/picture/`）（指针视差、打字机文案、可点击对话气泡）＋ Q 版分区卡片导航；各分区标题配 Q 版贴纸与英文副标题（不使用日文）；游戏放映厅新增圆点切换；关于区改为插画（@omrice4869）＋由作品 frontmatter 自动汇总的技术标签。全站新增右下角看板娘（按页面和分区说话、可收起）、可开关的飘雪、点击雪花粒子与滚动渐显，均遵守「减少动态效果」系统设置。设计说明见 [二次元主题记录](docs/design/18-anime-mascot.md)。
+**V0.5 二次元主题（2026-11-21）**：新增看板娘「冰霓」（AI 绘制的 Q 版形象）。首页改为插画首屏（站长提供的插画，原图位于本地 `media-source/anime/`）（指针视差、打字机文案、可点击对话气泡）＋ Q 版分区卡片导航；各分区标题配 Q 版贴纸与英文副标题（不使用日文）；游戏放映厅新增圆点切换；关于区改为插画（@omrice4869）＋由作品 frontmatter 自动汇总的技术标签。全站新增右下角看板娘（按页面和分区说话、可收起）、可开关的飘雪、点击雪花粒子与滚动渐显，均遵守「减少动态效果」系统设置。设计说明见 [二次元主题记录](docs/design/18-anime-mascot.md)。
 
 **V0.4 首页（2026-10-21）**：增加四分区首屏直达按钮和吸顶导航；**游戏分区直接使用电影式放映厅**，图形学与渲染、后端开发、杂项依次纵向排列。所有展区均自动收录对应类别的公开作品，并保留旧项目详情链接。新增非游戏项目可使用 `stack` 代替 `engine`。项目接入方式见 [V0.4 内容结构与维护约定](docs/content/10-creative-archive.md)。下文 V8 / Winter Atelier 为之前版本的历史记录。
 
@@ -24,7 +24,7 @@ V8 已迁移至正式 Astro 源码（2026-10-09）。依赖安装、类型检查
 
 - Astro 6，静态生成；Node.js 22+
 - TypeScript，Content Collections / Zod，MDX
-- Tailwind CSS 4（Vite 插件），定制 CSS 为主
+- 原生 CSS
 - 原生跨文档链接，无 SPA 路由；首页、案例页、404 均无客户端脚本；未启用 View Transitions
 - 明亮冬日 CSS + AI 概念插画；Astro Image / Sharp 输出响应式 WebP；仅小型品牌标记呼吸与克制的图片 hover；降低动效偏好下关闭动画、过渡、位移和平滑滚动
 
@@ -45,6 +45,8 @@ Node.js 22.12+、pnpm 10.28.1。已有 `pnpm-lock.yaml`，使用锁文件重现�
 ## 内容与路由
 
 发布文件单个不得超过 25 MiB。`pnpm verify:build` 会检查 `dist/` 中每个文件的字节数。原始视频和封面保存在本地 `media-source/`，该目录已被 Git 忽略，也不会进入 Astro 发布产物。`scripts/optimize-media.mjs` 使用系统 FFmpeg 做 H.264 / AAC 双遍编码、MP4 faststart，以及 Sharp WebP 压缩；对已有发布文件和备份拒绝覆盖。
+
+《古法匠心建模》使用 `public/media/projects/craft-modeling/` 中的压缩版视频，原片位于本地 `media-source/Model/`。
 
 - `/`：冬日工坊首页、首屏项目入口和作品选集。
 - `/projects/rts-gameplay-systems/`：RTS 独立案例。

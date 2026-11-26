@@ -44,7 +44,7 @@ const skills = [...new Set(projects.flatMap(({ data }) => [
     <section class="about about-anime wrap" id="about" aria-label="关于这个作品集">
       <figure class="about-art" data-tilt data-tilt-max="4" data-reveal>
         <div class="about-art-frame">
-          <Image src={animeArt.about} alt="蓝发少女双手贴在玻璃前，周围是闪光与彩色光带的插画" widths={[560, 900, 1300, 1800]} sizes="(max-width: 820px) calc(100vw - 40px), 52vw" format="webp" quality={80} loading="lazy" />
+          <Image src={animeArt.about} alt="蓝发少女双手贴在玻璃前，周围是闪光与彩色光带的插画" width={1800} widths={[560, 900, 1300, 1800]} sizes="(max-width: 820px) calc(100vw - 40px), min(52vw, 630px)" format="webp" quality={80} loading="lazy" />
         </div>
       </figure>
       <div data-reveal>

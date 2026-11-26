@@ -60,16 +60,26 @@ function initTyper() {
   let word = 0;
   let length = words[0]?.length ?? 0;
   let deleting = true;
+  let delay = 2400;
+  let timer = 0;
   const tick = () => {
     const current = words[word] ?? '';
     length += deleting ? -1 : 1;
     typer.textContent = current.slice(0, Math.max(0, length));
-    let delay = deleting ? 55 : 120;
+    delay = deleting ? 55 : 120;
     if (!deleting && length >= current.length) { deleting = true; delay = 2100; }
     else if (deleting && length <= 0) { deleting = false; word = (word + 1) % words.length; delay = 320; }
-    window.setTimeout(tick, delay);
+    timer = window.setTimeout(tick, delay);
   };
-  window.setTimeout(tick, 2400);
+  if (typeof IntersectionObserver === 'undefined') {
+    window.setTimeout(tick, delay);
+    return;
+  }
+  const observer = new IntersectionObserver(([entry]) => {
+    window.clearTimeout(timer);
+    if (entry?.isIntersecting) timer = window.setTimeout(tick, delay);
+  });
+  observer.observe(typer);
 }
 
 function sparkle(x: number, y: number, amount = 7) {
