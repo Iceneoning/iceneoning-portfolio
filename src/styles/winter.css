@@ -160,7 +160,8 @@ footer>.wrap>a:last-child { font-size:12px; color:#375e90 }
 .project-cover-pending strong{font:400 clamp(25px,3vw,43px)/1.2 var(--serif)}
 .project-cover-pending>span:last-child{font-size:11px;color:var(--ink-2)}
 .case-cover-pending{aspect-ratio:16/9;height:auto;border:1px solid var(--line)}
-.case-demo{margin-top:42px;scroll-margin-top:30px}
+.case-demo{scroll-margin-top:30px}
+.case-demo--placeholder{margin-top:42px}
 .demo-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:18px}
 .demo-heading .eyebrow{font-size:9px;margin-bottom:7px}
 .demo-heading h2{font:400 28px/1.35 var(--serif);margin:0}
@@ -239,7 +240,7 @@ footer>.wrap>a:last-child { font-size:12px; color:#375e90 }
 .mdx-content table{font-size:13px;line-height:1.8;color:#5c7583}
 .mdx-content th{text-align:left;color:var(--ink);background:#eef3f7;font-weight:600}
 @media(max-width:700px){
- .case-demo{margin-top:30px}
+ .case-demo--placeholder{margin-top:30px}
  .demo-heading{gap:12px;margin-bottom:12px}
  .demo-heading h2{font-size:23px}
  .demo-status{font-size:10px}

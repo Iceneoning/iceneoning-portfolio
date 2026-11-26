@@ -7,7 +7,7 @@ import { sectionChibi } from '../lib/anime-art';
 import type { ProjectCategory } from '../config/project-sections';
 
 interface Props {
-  section: { id: ProjectCategory; title: string; english: string; kana: string; accent: string; intro: string };
+  section: { id: ProjectCategory; title: string; english: string; label: string; accent: string; intro: string };
   projects: Project[];
   externalLink?: { href: string; title: string; description: string };
 }
@@ -31,7 +31,7 @@ const entries = externalLink
       <div class="archive-heading-main">
         <Image src={sectionChibi[section.id]} alt="" widths={[160, 280]} sizes="96px" format="webp" quality={82} class="archive-chibi" loading="lazy" />
         <div>
-          <p class="kana-label"><span>{section.kana}</span> · {section.english}</p>
+          <p class="kana-label"><span>{section.english}</span></p>
           <h2 id={`title-${section.id}`}>{section.title}</h2>
           <p class="archive-intro">{section.intro}</p>
         </div>
@@ -56,6 +56,6 @@ const entries = externalLink
           </a>
         ))}
       </div> :
-      <p class="archive-empty">作品整理中，敬请期待 (｡･ω･｡)</p>}
+      <p class="archive-empty">作品整理中，敬请期待 (｡•ω•｡)</p>}
   </div>
 </section>

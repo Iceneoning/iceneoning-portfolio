@@ -16,9 +16,10 @@ const hasProjectDetails = Boolean(hasContribution || data.integratedSystems.leng
 const chapters = headings.filter((heading) => heading.depth === 2);
 const firstChapter = chapters[0];
 const media = getProjectMedia(project);
-const showDemo = media.sources.length > 0 || (data.category === 'games' && data.status === '开发中');
+const hasVideo = media.sources.length > 0;
+const showDemoPlaceholder = !hasVideo && data.category === 'games' && data.status === '开发中';
+const showDemo = hasVideo || showDemoPlaceholder;
 const showChapterNav = chapters.length > 1 || hasProjectDetails || data.gallery.length > 0;
-const showHeroMedia = hasContribution || !media.sources.length;
 ---
 <BaseLayout title={`${data.title} · ICE Creative Archive`} description={data.summary}>
   <main id="main" tabindex="-1">
@@ -36,9 +37,24 @@ const showHeroMedia = hasContribution || !media.sources.length;
         </div>
       </div>
       {data.status === '开发中' && <div class="case-development-note" role="note"><strong>正在开发，敬请期待</strong><span>项目仍在持续迭代，以下技术介绍为当前阶段的实现记录。</span></div>}
-      {showHeroMedia && (media.cover ? <figure class="case-capture"><img src={media.cover} alt={media.coverAlt} width="1280" height="720" fetchpriority="high" /><figcaption>{media.coverCaption}</figcaption></figure> : media.awaitingCover ? <div class="project-cover-pending case-cover-pending"><span class="eyebrow">BOARDLINE 57 / IN DEVELOPMENT</span><strong>BoardLine 57</strong><span>项目封面待上传</span></div> : showDemo && <>
-        <div class="case-concept"><PortfolioArtwork warm={data.tone === 'warm'} wide /><span>网站 AI 概念插画 · 非项目实机画面</span></div>
-      </>)}
+      {hasVideo ? (
+        <ProjectDemo project={project} sources={media.sources} />
+      ) : media.cover ? (
+        <figure class="case-capture">
+          <img src={media.cover} alt={media.coverAlt} width="1280" height="720" fetchpriority="high" />
+          <figcaption>{media.coverCaption}</figcaption>
+        </figure>
+      ) : media.awaitingCover ? (
+        <div class="project-cover-pending case-cover-pending">
+          <span class="eyebrow">BOARDLINE 57 / IN DEVELOPMENT</span>
+          <strong>BoardLine 57</strong><span>项目封面待上传</span>
+        </div>
+      ) : showDemoPlaceholder && (
+        <div class="case-concept">
+          <PortfolioArtwork warm={data.tone === 'warm'} wide />
+          <span>网站 AI 概念插画 · 非项目实机画面</span>
+        </div>
+      )}
       <div class="case-facts">
         <div><small>{data.stack.length ? 'TECH STACK' : 'ENGINE'}</small><strong>{data.stack.length ? data.stack.join(' / ') : data.engine ?? '未填写'}</strong></div>
         {date && <div><small>PROJECT DATE</small><strong>{date}</strong></div>}
@@ -46,7 +62,7 @@ const showHeroMedia = hasContribution || !media.sources.length;
         <div><small>KEYWORDS</small><strong>{data.keywords.join(' / ')}</strong></div>
         <div><small>STATUS</small><strong>{data.status}</strong></div>
       </div>
-      {showDemo && <ProjectDemo project={project} />}
+      {showDemoPlaceholder && <ProjectDemo project={project} sources={media.sources} />}
     </div></section>
     <section class:list={['case-reading', 'wrap', { 'case-reading--short': !showChapterNav }]} id="chapters" aria-label="项目介绍">
       {showChapterNav && <nav class="chapter-nav" aria-label="案例章节" data-chapter-nav><p class="eyebrow">本页目录</p>{showDemo && <a href="#demo">视频演示</a>}{chapters.map((heading) => <a href={`#${heading.slug}`}>{heading.text}</a>)}{data.gallery.length > 0 && <a href="#gallery">项目画面</a>}{hasProjectDetails && <a href="#ownership">{hasContribution ? '职责清单' : '项目资源'}</a>}<a href="#project-navigation">项目导航</a></nav>}

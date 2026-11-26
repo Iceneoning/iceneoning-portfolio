@@ -9,7 +9,7 @@ const { counts } = Astro.props;
 <section class="section-cards" id="sections" aria-labelledby="section-cards-title">
   <div class="wrap">
     <div class="section-cards-head" data-reveal>
-      <p class="kana-label"><span>えらんでね</span> · CHOOSE A ROOM</p>
+      <p class="kana-label"><span>EXPLORE</span> · CHOOSE A ROOM</p>
       <h2 id="section-cards-title">想先逛哪个展区？</h2>
     </div>
     <ul class="section-cards-grid">
@@ -18,7 +18,7 @@ const { counts } = Astro.props;
           <a class="section-card" href={`#${section.id}`} data-tilt data-tilt-max="9" data-mascot-say={`「${section.title}」展区收录了 ${counts[section.id]} 项作品，${section.intro}`} aria-label={`浏览${section.title}分区，${counts[section.id] > 0 ? `${counts[section.id]} 项收录` : '整理中'}`}>
             <span class="section-card-glow" aria-hidden="true"></span>
             <Image src={sectionChibi[section.id]} alt="" widths={[160, 280]} sizes="140px" format="webp" quality={82} class="section-card-chibi" loading="lazy" />
-            <span class="section-card-kana" aria-hidden="true">{section.kana}</span>
+            <span class="section-card-kana" aria-hidden="true">{section.label}</span>
             <strong>{section.title}</strong>
             <span class="section-card-count">{counts[section.id] > 0 ? `${String(counts[section.id]).padStart(2, '0')} 项收录` : '整理中'}</span>
             <span class="section-card-arrow" aria-hidden="true">↘</span>

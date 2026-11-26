@@ -147,7 +147,7 @@ function say(text: string, duration = 4800) {
 
 const pokeLines = [
   '戳我干嘛啦～快去看作品！',
-  '冰霓是这个作品集的看板娘，请多指教 (｡･ω･｡)ﾉ',
+  '冰霓是这个作品集的看板娘，请多指教 (｡•ω•｡)/',
   '偷偷告诉你：游戏放映厅可以用滚轮和方向键换片哦。',
   '点右上角的 ❄ 可以开关飘雪～',
   '每个作品卡片都可以点进去看技术细节！',
@@ -162,7 +162,7 @@ const sectionLines: Record<string, string> = {
   frontend: '前端区！动效和交互是冰霓最喜欢的部分 ♪',
   backend: '后端区：服务端和 Mod 开发，看起来朴素但很重要哦。',
   misc: '杂项区里放着各种小实验，偶尔会有惊喜～',
-  about: '最后是关于页！感谢你看到这里 (≧∇≦)ﾉ',
+  about: '最后是关于页！感谢你看到这里 (≧∇≦)/',
 };
 
 function greeting() {
@@ -190,6 +190,12 @@ function initMascot() {
     if (visible && announce) say('我回来啦！');
   };
   if (store.get('ice-mascot') === 'hidden') setVisible(false, false);
+  else if (!store.get('ice-mascot') && window.matchMedia('(max-width: 700px)').matches) {
+    // Small screens start with the compact summon tab so the mascot never covers content.
+    mascotVisible = false;
+    mascot.hidden = true;
+    if (summon) summon.hidden = false;
+  }
 
   mascot.querySelector('[data-mascot-hide]')?.addEventListener('click', () => {
     setVisible(false);
@@ -258,7 +264,7 @@ function initMascot() {
     }
   }
 
-  const title = document.querySelector('h1')?.textContent?.replace(/\s+/g, ' ').trim();
+  const title = document.title.split(' · ')[0]?.trim();
   window.setTimeout(() => {
     if (isHome) say(greeting(), 5200);
     else if (document.querySelector('.not-found')) say('哎呀，这里好像迷路了……点按钮回作品集吧！', 6000);
@@ -271,7 +277,7 @@ function initHeroBubble() {
   const line = button?.querySelector<HTMLElement>('[data-hero-line]');
   if (!button || !line) return;
   const lines = [
-    '我是冰霓！负责带你参观这个作品集 ✧',
+    '欢迎光临！右下角的冰霓会带你参观这个作品集 ✧',
     '这里有游戏、渲染、前端和后端的作品哦。',
     '往下滑就是游戏放映厅，记得试试拖拽换片！',
     '右下角的 Q 版冰霓也可以戳一戳～',

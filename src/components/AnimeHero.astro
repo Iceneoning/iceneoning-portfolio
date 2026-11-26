@@ -10,7 +10,7 @@ const roles = ['游戏系统', '角色渲染', '前端交互', '后端工程', '
   <div class="ahero-aurora" aria-hidden="true"><i></i><i></i><i></i></div>
   <div class="ahero-grid wrap">
     <div class="ahero-copy">
-      <p class="hero-kicker" data-reveal><span class="kana-chip">ようこそ</span>冰霓 · 创作档案</p>
+      <p class="hero-kicker" data-reveal><span class="kana-chip">WELCOME</span>冰霓 · 创作档案</p>
       <h1 id="hero-title" data-reveal><span>让创作</span><span>留下<em>轨迹。</em></span></h1>
       <p class="ahero-role" data-reveal aria-label={`我在做：${roles.join('、')}`}>
         <span aria-hidden="true">我在做 <b data-typer data-words={JSON.stringify(roles)}>{roles[0]}</b><i class="ahero-caret"></i></span>
@@ -30,9 +30,8 @@ const roles = ['游戏系统', '角色渲染', '前端交互', '后端工程', '
     <div class="ahero-art" data-tilt data-tilt-max="7" data-hero-art>
       <div class="ahero-ring" aria-hidden="true"></div>
       <div class="ahero-frame">
-        <Image src={animeArt.hero} alt="原创看板娘冰霓：银白长发、戴雪花发夹的少女，身后是极光与漂浮的全息界面" widths={[420, 640, 900]} sizes="(max-width: 820px) 86vw, 40vw" format="webp" quality={80} loading="eager" fetchpriority="high" class="ahero-image" />
+        <Image src={animeArt.hero} alt="雪地里托腮坐着的银发精灵少女，发间别着白色花朵，身旁有雪人" widths={[420, 640, 800]} sizes="(max-width: 820px) 86vw, 40vw" format="webp" quality={82} loading="eager" fetchpriority="high" class="ahero-image" />
         <span class="ahero-shine" aria-hidden="true"></span>
-        <span class="ahero-credit">AI 绘制 · 原创看板娘「冰霓」</span>
       </div>
       <span class="ahero-badge ahero-badge--1" data-depth="26" aria-hidden="true">✦ Game Dev</span>
       <span class="ahero-badge ahero-badge--2" data-depth="40" aria-hidden="true">Shader ✧</span>
@@ -113,7 +112,7 @@ const roles = ['游戏系统', '角色渲染', '前端交互', '后端工程', '
     --rx: 0deg; --ry: 0deg; --mx: 0; --my: 0;
     position: relative;
     justify-self: center;
-    width: min(100%, 470px);
+    width: min(100%, 430px);
     transform: perspective(1100px) rotateX(var(--rx)) rotateY(var(--ry));
     transform-style: preserve-3d;
     transition: transform .4s var(--ease);
@@ -131,7 +130,7 @@ const roles = ['游戏系统', '角色渲染', '前端交互', '后端工程', '
 
   .ahero-frame {
     position: relative;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 2 / 3;
     overflow: hidden;
     border-radius: 30px;
     border: 3px solid #fff;
@@ -144,8 +143,6 @@ const roles = ['游戏系统', '角色渲染', '前端交互', '后端工程', '
     background: radial-gradient(circle at calc(50% + var(--mx) * 40%) calc(30% + var(--my) * 40%), #ffffff55, transparent 45%);
     mix-blend-mode: soft-light;
   }
-  .ahero-credit { position: absolute; left: 12px; bottom: 12px; padding: 5px 10px; border-radius: 999px; background: #0f1d3a8c; color: #eef3ff; font-size: 10px; letter-spacing: .04em; backdrop-filter: blur(6px); }
-
   .ahero-badge, .ahero-bubble {
     position: absolute;
     transform: translate3d(calc(var(--mx) * var(--d, 20) * 1px), calc(var(--my) * var(--d, 20) * 1px), 40px);

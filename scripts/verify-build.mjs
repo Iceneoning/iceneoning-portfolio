@@ -81,7 +81,7 @@ for (const [file, html] of htmlByPath) {
       : /<button[^>]*data-showcase-prev[^>]*disabled[^>]*>/.test(html) && /<button[^>]*data-showcase-next[^>]*disabled[^>]*>/.test(html));
     check('Homepage: creative archive copy', html.includes('记录一直以来的项目、实践与持续探索。'));
     check('Homepage: section cards link to every category', categories.every((id) => html.includes(`class="section-card" href="#${id}"`)) && html.includes('id="section-cards-title"'));
-    check('Homepage: anime hero with credited original artwork', html.includes('data-hero-art') && html.includes('AI 绘制') && !/atelier-image|winter-workshop/.test(html));
+    check('Homepage: illustrated hero', html.includes('data-hero-art') && !/atelier-image|winter-workshop/.test(html));
     check('Homepage: progressive placeholders match preview count', (html.match(/data-progressive="true"/g) || []).length === (html.match(/--art-preview:/g) || []).length);
     check('Homepage: project images use a defined media strategy', (html.match(/fetchpriority="low"/g) || []).length + (html.match(/class="project-cover"/g) || []).length + (html.match(/class="project-cover-pending"/g) || []).length === gameSlugs.length);
   }
@@ -136,9 +136,12 @@ for (const [index, { slug, category, developing }] of publishedRecords.entries()
   check(`${slug}: video section matches available media`, ['id="demo"', 'id="demo-title"'].every((attribute) => html.includes(attribute) === hasDemo));
   check(`${slug}: video chapter link matches the chapter index`, html.includes('href="#demo"') === (hasDemo && html.includes('class="chapter-nav"')));
   check(`${slug}: empty video slots do not request missing media`, !/<video\b[^>]*>\s*<\/video>/.test(html));
-  if (html.includes('<video')) {
+  const player = html.match(/<video\b[^>]*\bclass="demo-player"[^>]*>/)?.[0];
+  check(`${slug}: player renders for available video`, Boolean(player) === hasVideo);
+  if (player) {
+    check(`${slug}: video replaces the detail cover`, html.indexOf('id="demo"') < html.indexOf('class="case-facts"') && !html.includes('class="case-capture"') && !/\bposter=/.test(player));
     check(`${slug}: functional player controls rendered`, ['data-video-player', 'data-video-seek', 'data-video-rate', 'data-video-rate-value', 'data-video-surface', 'data-video-volume'].every((attribute) => html.includes(attribute)));
-    check(`${slug}: native player retained before enhancement`, /<video\b[^>]*\bcontrols\b/.test(html));
+    check(`${slug}: native player retained before enhancement`, /\bcontrols\b/.test(player));
   }
   for (const [direction, adjacentSlug] of [
     ['上一部作品', publishedSlugs[index - 1]],
@@ -152,8 +155,9 @@ check('RTS: accurate ownership and testing limits', rts.includes('命令系统�
 check('Blitz: existing framework separated', blitz.includes('工程复用 Lyra') && blitz.includes('Lyra 原有射击、换弹、移动预测和 ReplicationGraph 当作自研'));
 check('Developing projects: coming-soon notice retained', [rts, blitz].every((html) => html.includes('正在开发，敬请期待')));
 for (const slug of ['challenge', 'fps']) {
-  const html = htmlByPath.get(join(dist, 'projects', slug, 'index.html'));
-  check(`${slug}: real blog cover used`, html.includes(`/media/projects/${slug}/cover.webp`) && !html.includes('class="case-concept"'));
+  const cover = `/media/projects/${slug}/cover.webp`;
+  const detail = htmlByPath.get(join(dist, 'projects', slug, 'index.html'));
+  check(`${slug}: cover is available in the homepage showcase`, home.includes(`src="${cover}"`) && !detail.includes(cover));
 }
 check('Challenge: checkpoint and reusable mechanisms documented', htmlByPath.get(join(dist, 'projects', 'challenge', 'index.html')).includes('死亡、检查点与重生'));
 check('FPS: animation timing case documented', htmlByPath.get(join(dist, 'projects', 'fps', 'index.html')).includes('一帧动画错位的排查'));

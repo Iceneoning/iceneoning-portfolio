@@ -121,7 +121,7 @@ body {
 .about-art-frame { position: relative; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 24px; border: 3px solid #fff; box-shadow: 0 30px 60px -30px #2c3f7aaa, 0 0 0 1px #d4dbf2 }
 .about-art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease) }
 .about-art:hover img { transform: scale(1.03) }
-.about-art figcaption { margin-top: 12px; font-size: 11px; color: #6b7d99 }
+.about-art::after { content: ""; display: block; height: 1lh; margin-top: 12px; font-size: 11px }
 .about-art::before { content: ""; position: absolute; inset: auto -18px -18px auto; width: 60%; height: 70%; z-index: -1; border-radius: 28px; background: var(--aurora); opacity: .35; filter: blur(2px) }
 .about-anime h2 { margin: 0; font: 400 clamp(29px, 2.8vw, 38px)/1.45 var(--serif); letter-spacing: -.02em }
 .about-anime h2 em { font-style: normal; background: var(--aurora-text); -webkit-background-clip: text; background-clip: text; color: transparent }
@@ -137,6 +137,11 @@ footer { position: relative; background: linear-gradient(180deg, #eef1fa, #e9ebf
 footer::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--aurora); opacity: .7 }
 .footer-brand { background: var(--aurora-text); -webkit-background-clip: text; background-clip: text; color: transparent }
 .footer-brand span { -webkit-text-fill-color: #61728b }
+/* Keep footer links clear of the fixed mascot. */
+footer > .wrap { padding-bottom: 150px }
+@media (min-width: 1500px) { footer > .wrap { padding-bottom: 30px } }
+.mascot-bubble, .ahero-bubble { text-wrap: pretty }
+.not-found { min-height: calc(100svh - 160px) }
 
 /* ---------- Case pages ---------- */
 .case-hero { background: radial-gradient(ellipse at top right, #e6e3ff, transparent 62%), radial-gradient(ellipse at bottom left, #e3f1ff, transparent 60%), #f4f6fd }
@@ -145,7 +150,7 @@ footer::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; 
 .chapter-nav { border-radius: 16px; box-shadow: 0 14px 30px -26px #2c3f7a }
 .chapter-nav a:hover, .chapter-nav a[aria-current="location"] { background: #efedff; color: #4b45b8 }
 .chapter-nav a[aria-current="location"] { box-shadow: inset 3px 0 #8b6cf0 }
-.case-capture img { border-radius: 16px }
+.case-capture img, .demo-video { border-radius: 16px }
 .next-feature { background: linear-gradient(120deg, #1f3566, #4a5fb8); border-color: transparent }
 
 /* ---------- 404 ---------- */
@@ -157,14 +162,14 @@ footer::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; 
 .mascot { position: fixed; right: 16px; bottom: 12px; z-index: 40; display: flex; align-items: flex-end; gap: 6px; pointer-events: none }
 .mascot[hidden] { display: none }
 .mascot > * { pointer-events: auto }
-.mascot-body { position: relative; width: 132px; height: 132px; padding: 0; border: 0; background: none; cursor: pointer; animation: chibi-bob 4.6s ease-in-out infinite; transform-origin: 50% 95% }
+.mascot-body { position: relative; width: 116px; height: 116px; padding: 0; border: 0; background: none; cursor: pointer; animation: chibi-bob 4.6s ease-in-out infinite; transform-origin: 50% 95% }
 .mascot-body img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 12px #1d2b5040); -webkit-user-drag: none; user-select: none }
 .mascot-body:focus-visible { outline-offset: -6px; border-radius: 50% }
 .mascot-body.is-hop { animation: mascot-hop .55s var(--ease) }
 @keyframes mascot-hop { 30% { transform: translateY(-18px) rotate(-6deg) scale(1.04) } 60% { transform: translateY(0) rotate(4deg) } 100% { transform: none } }
-.mascot-tools { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; opacity: .25; translate: 8px 0; transition: opacity .25s, translate .25s }
+.mascot-tools { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; opacity: .7; translate: 4px 0; transition: opacity .25s, translate .25s }
 .mascot:hover .mascot-tools, .mascot:focus-within .mascot-tools { opacity: 1; translate: 0 0 }
-.mascot-tool { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid #d5dcf2; border-radius: 50%; background: #ffffffe6; color: var(--ink); font: 15px/1 var(--sans); cursor: pointer; box-shadow: 0 6px 14px -8px #2c3f7a88; backdrop-filter: blur(8px); transition: background .2s, color .2s, border-color .2s }
+.mascot-tool { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid #b9c4e6; border-radius: 50%; background: #fff; color: #23365f; font: 600 15px/1 var(--sans); cursor: pointer; box-shadow: 0 6px 14px -8px #2c3f7a88; transition: background .2s, color .2s, border-color .2s }
 .mascot-tool:hover, .mascot-tool:focus-visible { background: linear-gradient(135deg, #5b7fe0, #9b7cf0); border-color: transparent; color: #fff }
 .mascot-tool[aria-pressed="false"] { color: #9aa6bd; text-decoration: line-through }
 .mascot-tool:focus-visible { outline-offset: 2px }
@@ -204,6 +209,7 @@ footer::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; 
   .gallery .section-head { flex-wrap: wrap }
   .showcase-dots { display: none }
   .not-found-anime { grid-template-columns: 1fr }
+  footer > .wrap { padding-bottom: 76px }
 }
 @media (prefers-reduced-motion: reduce) {
   .js-fx [data-reveal] { opacity: 1; translate: none }

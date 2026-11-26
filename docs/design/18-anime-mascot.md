@@ -8,8 +8,8 @@
 
 | 文件 | 用途 | 说明 |
 | --- | --- | --- |
-| `src/assets/anime/hero.jpg` | 首页首屏主视觉 | 4:3 竖幅，Astro 输出 420/640/900 WebP |
-| `src/assets/anime/about.jpg` | 关于区插画 | 16:9 |
+| `src/assets/anime/hero-snow.jpg` | 首页首屏主视觉 | 站长提供（`public/picture/鞠姐.jpg`），2:3 竖幅 |
+| `src/assets/anime/about-mika.jpg` | 关于区插画 | 站长提供（`public/picture/Mika.png`，作者 @omrice4869），16:9 |
 | `src/assets/anime/chibi.png` | 右下角看板娘 | 透明 PNG |
 | `src/assets/anime/chibi-{games,graphics,frontend,backend,misc}.png` | 分区卡片与分区标题贴纸 | 透明 PNG |
 | `src/assets/anime/chibi-404.png` | 404 页 | 透明 PNG |
@@ -23,7 +23,7 @@
 
 - `AnimeHero.astro`：插画卡片（指针 3D 视差、光泽、浮动标签）、打字机角色文案、可点击的对话气泡、作品统计。
 - `SectionCards.astro`：五个 Q 版分区卡片，替代原 `ArchiveIndex`（文件保留，不再引用）。
-- `ProjectSection.astro` / `ProjectShowcase.astro`：标题加入 Q 版贴纸和假名副标题；卡片倾斜与高光；放映厅增加圆点切换。
+- `ProjectSection.astro` / `ProjectShowcase.astro`：标题加入 Q 版贴纸和英文副标题；卡片倾斜与高光；放映厅增加圆点切换。
 - `Mascot.astro` + `src/scripts/anime-fx.ts`：全站唯一新增脚本，负责滚动渐显、倾斜、打字机、飘雪（DOM 雪花，不使用 canvas）、点击粒子和看板娘台词。
 - 配色与全局样式：`src/styles/anime.css`（在 `winter.css` 之后加载）。
 
